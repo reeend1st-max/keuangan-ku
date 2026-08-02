@@ -32,13 +32,20 @@
   function mapError(error) {
     if (!error) return "Terjadi kesalahan.";
     var msg = error.message || String(error);
-    if (/already registered|already exists/i.test(msg)) return "Email sudah terdaftar. Silakan masuk.";
-    if (/invalid login credentials/i.test(msg)) return "Email atau password salah.";
+    if (/already registered|already exists/i.test(msg)) return "Email atau username ini sudah terdaftar. Silakan masuk.";
+    if (/invalid login credentials/i.test(msg)) return "Email/username atau password salah.";
     if (/password should be at least/i.test(msg)) return "Password minimal 6 karakter.";
+    if (/invalid email|email address.*invalid/i.test(msg)) return "Gunakan alamat email asli yang sah (contoh: nama@gmail.com).";
     if (/rate limit/i.test(msg)) return "Terlalu banyak percobaan. Coba lagi sebentar lagi.";
     if (/duplicate key/i.test(msg)) return "Data ini sudah ada.";
     if (/network|fetch/i.test(msg)) return "Tidak bisa terhubung ke server. Periksa koneksi internet.";
     return msg;
+  }
+
+  function toEmail(input) {
+    var str = (input || "").trim().toLowerCase();
+    if (str.indexOf("@") >= 0) return str;
+    return str + "@keuanganku.app";
   }
 
   async function currentUserId() {
@@ -57,31 +64,57 @@
 
   var Api = {
     // ── Auth ──────────────────────────────────────────────────────────────
-    register: async function (email, password, name) {
+    register: async function (email, username, password) {
+      var cleanEmail = (email || "").trim().toLowerCase();
+      if (!cleanEmail || cleanEmail.indexOf("@") < 0) {
+        throw new Error("Masukkan alamat email yang valid (contoh: nama@gmail.com).");
+      }
+      var cleanUser = (username || "").trim().toLowerCase().replace(/[^a-z0-9_.-]/g, "");
+      if (!cleanUser || cleanUser.length < 3) {
+        throw new Error("Username minimal 3 karakter (huruf, angka, _, ., -).");
+      }
+
       var res = await sb.auth.signUp({
-        email: email,
+        email: cleanEmail,
         password: password,
-        options: { data: { name: name } },
+        options: { data: { name: "", username: cleanUser } },
       });
       if (res.error) throw new Error(mapError(res.error));
       if (!res.data.user) throw new Error("Registrasi gagal. Coba lagi.");
-      // If email confirmation is required, there is no session yet.
       if (!res.data.session) {
         throw new Error(
-          "Akun dibuat! Cek email kamu untuk konfirmasi, lalu masuk kembali."
+          "Akun berhasil dibuat! Silakan masuk dengan Email/Username & Password kamu."
         );
       }
       return {
-        user: { id: res.data.user.id, email: res.data.user.email, name: name },
+        user: { id: res.data.user.id, username: cleanUser, name: "", email: cleanEmail },
       };
     },
 
-    login: async function (email, password) {
-      var res = await sb.auth.signInWithPassword({ email: email, password: password });
+    login: async function (usernameOrEmail, password) {
+      var input = (usernameOrEmail || "").trim().toLowerCase();
+      var res = await sb.auth.signInWithPassword({ email: input, password: password });
+      if (res.error && input.indexOf("@") < 0) {
+        var altRes = await sb.auth.signInWithPassword({ email: toEmail(input), password: password });
+        if (!altRes.error) res = altRes;
+      }
       if (res.error) throw new Error(mapError(res.error));
       var user = res.data.user;
-      var name = (user.user_metadata && user.user_metadata.name) || user.email;
-      return { user: { id: user.id, email: user.email, name: name } };
+      var meta = user.user_metadata || {};
+      var uname = meta.username || (user.email ? user.email.split("@")[0] : "user");
+      var name = meta.name || "";
+      return { user: { id: user.id, username: uname, name: name, email: user.email } };
+    },
+
+    updateName: async function (name) {
+      var cleanName = (name || "").trim();
+      if (!cleanName) throw new Error("Nama wajib diisi.");
+      var res = await sb.auth.updateUser({ data: { name: cleanName } });
+      if (res.error) throw new Error(mapError(res.error));
+      var user = res.data.user;
+      var meta = user.user_metadata || {};
+      var uname = meta.username || (user.email ? user.email.split("@")[0] : "user");
+      return { user: { id: user.id, username: uname, name: cleanName, email: user.email } };
     },
 
     logout: async function () {
@@ -95,8 +128,10 @@
       var res = await sb.auth.getSession();
       if (!res.data.session) return null;
       var user = res.data.session.user;
-      var name = (user.user_metadata && user.user_metadata.name) || user.email;
-      return { id: user.id, email: user.email, name: name };
+      var meta = user.user_metadata || {};
+      var uname = meta.username || (user.email ? user.email.split("@")[0] : "user");
+      var name = meta.name || "";
+      return { id: user.id, username: uname, name: name, email: user.email };
     },
 
     // ── Bootstrap: load everything for the logged-in user in one go ────────
