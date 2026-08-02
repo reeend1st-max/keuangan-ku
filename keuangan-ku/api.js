@@ -32,9 +32,10 @@
   function mapError(error) {
     if (!error) return "Terjadi kesalahan.";
     var msg = error.message || String(error);
-    if (/already registered|already exists/i.test(msg)) return "Username sudah terdaftar. Gunakan username lain.";
-    if (/invalid login credentials/i.test(msg)) return "Username atau password salah.";
+    if (/already registered|already exists/i.test(msg)) return "Email atau username ini sudah terdaftar. Silakan masuk.";
+    if (/invalid login credentials/i.test(msg)) return "Email/username atau password salah.";
     if (/password should be at least/i.test(msg)) return "Password minimal 6 karakter.";
+    if (/invalid email|email address.*invalid/i.test(msg)) return "Gunakan alamat email asli yang sah (contoh: nama@gmail.com).";
     if (/rate limit/i.test(msg)) return "Terlalu banyak percobaan. Coba lagi sebentar lagi.";
     if (/duplicate key/i.test(msg)) return "Data ini sudah ada.";
     if (/network|fetch/i.test(msg)) return "Tidak bisa terhubung ke server. Periksa koneksi internet.";
@@ -63,15 +64,18 @@
 
   var Api = {
     // ── Auth ──────────────────────────────────────────────────────────────
-    register: async function (username, password) {
+    register: async function (email, username, password) {
+      var cleanEmail = (email || "").trim().toLowerCase();
+      if (!cleanEmail || cleanEmail.indexOf("@") < 0) {
+        throw new Error("Masukkan alamat email yang valid (contoh: nama@gmail.com).");
+      }
       var cleanUser = (username || "").trim().toLowerCase().replace(/[^a-z0-9_.-]/g, "");
       if (!cleanUser || cleanUser.length < 3) {
         throw new Error("Username minimal 3 karakter (huruf, angka, _, ., -).");
       }
 
-      var email = toEmail(cleanUser);
       var res = await sb.auth.signUp({
-        email: email,
+        email: cleanEmail,
         password: password,
         options: { data: { name: "", username: cleanUser } },
       });
@@ -79,16 +83,17 @@
       if (!res.data.user) throw new Error("Registrasi gagal. Coba lagi.");
       if (!res.data.session) {
         throw new Error(
-          "Akun berhasil dibuat! Silakan masuk dengan Username & Password kamu."
+          "Akun berhasil dibuat! Silakan masuk dengan Email/Username & Password kamu."
         );
       }
       return {
-        user: { id: res.data.user.id, username: cleanUser, name: "", email: email },
+        user: { id: res.data.user.id, username: cleanUser, name: "", email: cleanEmail },
       };
     },
 
     login: async function (usernameOrEmail, password) {
-      var email = toEmail(usernameOrEmail);
+      var input = (usernameOrEmail || "").trim().toLowerCase();
+      var email = input.indexOf("@") >= 0 ? input : toEmail(input);
       var res = await sb.auth.signInWithPassword({ email: email, password: password });
       if (res.error) throw new Error(mapError(res.error));
       var user = res.data.user;

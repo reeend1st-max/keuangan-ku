@@ -143,6 +143,7 @@ function ConfirmModal(p){
 // ── Auth Screen ───────────────────────────────────────────────────────────────
 function AuthScreen(p){
   var _m=useState("login"),mode=_m[0],setMode=_m[1];
+  var _e=useState(""),email=_e[0],setEmail=_e[1];
   var _u=useState(""),username=_u[0],setUsername=_u[1];
   var _pw=useState(""),pw=_pw[0],setPw=_pw[1];
   var _l=useState(false),loading=_l[0],setLoading=_l[1];
@@ -150,14 +151,20 @@ function AuthScreen(p){
 
   async function submit(){
     setErr("");
-    if(!username.trim()||!pw){setErr("Username dan password wajib diisi.");return;}
+    if(mode==="register"){
+      if(!email.trim()){setErr("Email wajib diisi.");return;}
+      if(email.indexOf("@")<0){setErr("Format email tidak valid (contoh: nama@gmail.com).");return;}
+      if(!username.trim()){setErr("Username wajib diisi.");return;}
+    }else{
+      if(!username.trim()&&!email.trim()){setErr("Username atau Email dan password wajib diisi.");return;}
+    }
+    if(!pw){setErr("Password wajib diisi.");return;}
     if(pw.length<6){setErr("Password minimal 6 karakter.");return;}
     setLoading(true);
-    var cleanU=username.trim();
     try{
       var result = mode==="register"
-        ? await window.Api.register(cleanU, pw)
-        : await window.Api.login(cleanU, pw);
+        ? await window.Api.register(email.trim(), username.trim(), pw)
+        : await window.Api.login(username.trim()||email.trim(), pw);
       p.onAuth(result.user);
     }catch(e){
       setErr(e.message || "Terjadi kesalahan. Coba lagi.");
@@ -176,9 +183,13 @@ function AuthScreen(p){
       React.createElement("div",{style:{display:"flex",background:T.panel,borderRadius:10,padding:4,marginBottom:24,border:"1.5px solid "+T.border}},
         ["login","register"].map(function(m){return React.createElement("button",{key:m,onClick:function(){setMode(m);setErr("");},style:{flex:1,padding:"9px 0",borderRadius:7,border:"none",background:mode===m?T.tealDim:"transparent",color:mode===m?T.teal:T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},m==="login"?"Masuk":"Daftar");})
       ),
+      mode==="register"&&React.createElement("div",{style:{marginBottom:14}},
+        React.createElement("label",{style:{display:"block",fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.7,marginBottom:6}},"Email"),
+        React.createElement("input",{type:"email",value:email,onChange:function(e){setEmail(e.target.value);},placeholder:"kamu@email.com",style:inp})
+      ),
       React.createElement("div",{style:{marginBottom:14}},
-        React.createElement("label",{style:{display:"block",fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.7,marginBottom:6}},"Username"),
-        React.createElement("input",{type:"text",value:username,onChange:function(e){setUsername(e.target.value);},placeholder:mode==="register"?"Pilih username kamu":"Username kamu",style:inp,onKeyDown:function(e){if(e.key==="Enter")submit();}})
+        React.createElement("label",{style:{display:"block",fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.7,marginBottom:6}},mode==="register"?"Username":"Username / Email"),
+        React.createElement("input",{type:"text",value:username,onChange:function(e){setUsername(e.target.value);},placeholder:mode==="register"?"Pilih username kamu":"Username atau email kamu",style:inp,onKeyDown:function(e){if(e.key==="Enter")submit();}})
       ),
       React.createElement("div",{style:{marginBottom:20}},
         React.createElement("label",{style:{display:"block",fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.7,marginBottom:6}},"Password"),
