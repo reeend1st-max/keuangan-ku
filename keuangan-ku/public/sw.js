@@ -1,4 +1,4 @@
-const CACHE_NAME = "keuanganku-v4";
+const CACHE_NAME = "keuanganku-v7";
 const STATIC_ASSETS = [
   "/",
   "/index.html",

@@ -1,9 +1,8 @@
 // scripts/generate-config.js
 //
-// Runs during the Vercel build step (see package.json "build" script and
-// vercel.json "buildCommand"). Reads SUPABASE_URL and SUPABASE_ANON_KEY from
-// the environment and writes them into public/config.js, as well as copying
-// all required static assets into the public/ directory.
+// Runs during the Vercel build step. Reads SUPABASE_URL and SUPABASE_ANON_KEY from
+// the environment and writes them into public/config.js, ensuring all static assets
+// are cleanly synced into the public/ output directory.
 
 const fs = require("fs");
 const path = require("path");
@@ -26,7 +25,7 @@ dirsToCreate.forEach((dir) => {
   }
 });
 
-// Copy static files from root to public structure if present in root
+// Sync files between root and public structure
 const filesToCopy = [
   { src: "index.html", dest: "index.html" },
   { src: "manifest.json", dest: "manifest.json" },
@@ -45,23 +44,24 @@ const filesToCopy = [
 filesToCopy.forEach(({ src, dest }) => {
   const srcPath = path.join(rootDir, src);
   const destPath = path.join(publicDir, dest);
-  if (fs.existsSync(srcPath)) {
+  
+  if (fs.existsSync(srcPath) && fs.existsSync(destPath)) {
+    const srcStat = fs.statSync(srcPath);
+    const destStat = fs.statSync(destPath);
+    if (destStat.mtimeMs > srcStat.mtimeMs) {
+      fs.copyFileSync(destPath, srcPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  } else if (fs.existsSync(srcPath)) {
     fs.copyFileSync(srcPath, destPath);
+  } else if (fs.existsSync(destPath)) {
+    fs.copyFileSync(destPath, srcPath);
   }
 });
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
-
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.warn(
-    "\n⚠️  WARNING: SUPABASE_URL and/or SUPABASE_ANON_KEY environment " +
-    "variables are not set.\n" +
-    "   The app will build, but will show a config error when opened.\n" +
-    "   Set these in your Vercel project settings (Settings → Environment " +
-    "Variables) and redeploy.\n"
-  );
-}
 
 const outPath = path.join(publicDir, "config.js");
 
@@ -72,5 +72,4 @@ const contents =
   ";\n";
 
 fs.writeFileSync(outPath, contents, "utf8");
-console.log("✅ Successfully built static assets in public/ directory.");
-console.log("✅ Generated public/config.js");
+console.log("✅ Successfully synced build assets in public/ directory.");

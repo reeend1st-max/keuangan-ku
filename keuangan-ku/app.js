@@ -1110,5 +1110,4 @@ function App() {
   );
 }
 
-// Render root
-ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+// Render root is handled cleanly by index.html

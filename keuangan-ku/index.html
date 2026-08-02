@@ -11,56 +11,99 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Keuangan Ku"/>
 <title>Keuangan Ku 💰</title>
+
+<!-- Mobile Polyfill: Protect React DOM from Safari/Chrome Mobile auto-translate DOM mutations -->
+<script>
+if (typeof Node === "function" && Node.prototype) {
+  var origRemove = Node.prototype.removeChild;
+  Node.prototype.removeChild = function (child) {
+    if (child && child.parentNode !== this) {
+      if (window.console) console.warn("Prevented removeChild DOM mismatch:", child);
+      return child;
+    }
+    return origRemove.apply(this, arguments);
+  };
+  var origInsert = Node.prototype.insertBefore;
+  Node.prototype.insertBefore = function (newNode, refNode) {
+    if (refNode && refNode.parentNode !== this) {
+      if (window.console) console.warn("Prevented insertBefore DOM mismatch:", refNode);
+      return newNode;
+    }
+    return origInsert.apply(this, arguments);
+  };
+}
+</script>
+
 <link rel="manifest" href="/manifest.json"/>
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png"/>
 <link rel="apple-touch-icon" href="/assets/icon-192.png"/>
-<link rel="stylesheet" href="/css/style.css"/>
+<link rel="stylesheet" href="/css/style.css?v=20260802b"/>
 </head>
-<body>
+<body style="background:#0A0E17;margin:0;">
 <div id="root"></div>
 <div id="boot-error">
-  <h2>⚠️ Gagal memuat</h2>
-  <p style="color:#7A90B0;font-size:14px;margin-bottom:12px;">Periksa koneksi internet, lalu tekan F5. Jika masalah berlanjut, pastikan environment variables Supabase sudah diisi dengan benar di Vercel.</p>
-  <pre id="boot-error-detail"></pre>
+  <h2>⚠️ Memperbarui Aplikasi...</h2>
+  <p style="color:#9CA3AF;font-size:14px;margin-bottom:16px;line-height:1.5;">Browser HP Anda menyimpan versi cache lama. Silakan tekan tombol hijau di bawah ini untuk memuat versi terbaru yang sudah diperbaiki.</p>
+  <button onclick="clearMobileCache()" style="background:#00E5A3;color:#0A0E17;border:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(0,229,163,0.3);">🔄 Refresh Versi Terbaru</button>
+  <pre id="boot-error-detail" style="margin-top:16px;font-size:11px;color:#6B7280;text-align:left;white-space:pre-wrap;word-break:break-all;"></pre>
 </div>
 
-<!-- Vendored libraries — no external CDN dependency at runtime -->
+<script>
+function clearMobileCache() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      for (var i = 0; i < regs.length; i++) { regs[i].unregister(); }
+    });
+  }
+  if ('caches' in window) {
+    caches.keys().then(function(names) {
+      for (var i = 0; i < names.length; i++) { caches.delete(names[i]); }
+    });
+  }
+  setTimeout(function() {
+    window.location.reload(true);
+  }, 400);
+}
+
+window.addEventListener("error", function(e) {
+  var b = document.getElementById("boot-error"), d = document.getElementById("boot-error-detail");
+  if (b && !b.classList.contains("show")) {
+    if (d) d.textContent = (e.error && e.error.stack) ? e.error.stack : (e.message || "");
+    b.classList.add("show");
+  }
+});
+</script>
+
+<!-- Vendored libraries -->
 <script src="/vendor/react.production.min.js"></script>
 <script src="/vendor/react-dom.production.min.js"></script>
 <script src="/vendor/supabase.js"></script>
 
-<!-- Runtime config: SUPABASE_URL / SUPABASE_ANON_KEY, generated at build
-     time from environment variables by scripts/generate-config.js -->
-<script src="/config.js"></script>
-
-<script>
-window.addEventListener("error",function(e){
-  var b=document.getElementById("boot-error"),d=document.getElementById("boot-error-detail");
-  if(b&&!b.classList.contains("show")){d.textContent=(e.error&&e.error.stack)?e.error.stack:e.message;b.classList.add("show");}
-});
-</script>
+<!-- Runtime config -->
+<script src="/config.js?v=20260802_FINAL"></script>
 
 <!-- Supabase-backed data layer -->
-<script src="/js/api.js"></script>
+<script src="/js/api.js?v=20260802_FINAL"></script>
 <!-- Main application -->
-<script src="/js/app.js"></script>
+<script src="/js/app.js?v=20260802_FINAL"></script>
 
 <script>
-try{
-  if(!window.React||!window.ReactDOM)throw new Error("React gagal dimuat.");
-  if(!window.supabase)throw new Error("Supabase client gagal dimuat.");
-  if(!window.Api)throw new Error("Modul Api (api.js) gagal dimuat.");
+try {
+  if (!window.React || !window.ReactDOM) throw new Error("React gagal dimuat.");
+  if (!window.supabase) throw new Error("Supabase client gagal dimuat.");
+  if (!window.Api) throw new Error("Modul Api (api.js) gagal dimuat.");
   ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
-}catch(e){
-  var b=document.getElementById("boot-error"),d=document.getElementById("boot-error-detail");
-  d.textContent=e.stack||e.message;b.classList.add("show");
+} catch(e) {
+  var b = document.getElementById("boot-error"), d = document.getElementById("boot-error-detail");
+  if (d) d.textContent = e.stack || e.message;
+  if (b) b.classList.add("show");
 }
 </script>
 
 <script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load',function(){
-    navigator.serviceWorker.register('/sw.js').catch(function(){});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js?v=20260802b').catch(function() {});
   });
 }
 </script>
