@@ -927,21 +927,26 @@ function Sidebar(p) {
 
   return React.createElement(
     "div",
-    { style: { width: 224, background: T.sidebar, borderRight: "1px solid " + T.border, display: "flex", flexDirection: "column", flexShrink: 0, userSelect: "none" } },
+    { className: "sidebar-root", style: { width: 224, background: T.sidebar, borderRight: "1px solid " + T.border, display: "flex", flexDirection: "column", flexShrink: 0, userSelect: "none" } },
     React.createElement(
       "div",
-      { style: { padding: "20px 18px 16px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", gap: 10 } },
-      React.createElement("div", { style: { fontSize: 24 } }, "💰"),
+      { style: { padding: "16px 18px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between" } },
       React.createElement(
         "div",
-        null,
-        React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: T.teal, letterSpacing: -0.5 } }, "Keuangan"),
-        React.createElement("div", { style: { fontSize: 9, color: T.textSub, marginTop: 1, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase" } }, "PERSONAL FINANCE")
-      )
+        { style: { display: "flex", alignItems: "center", gap: 10 } },
+        React.createElement("div", { style: { fontSize: 22 } }, "💰"),
+        React.createElement(
+          "div",
+          null,
+          React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: T.teal, letterSpacing: -0.5 } }, "Keuangan"),
+          React.createElement("div", { style: { fontSize: 9, color: T.textSub, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase" } }, "PERSONAL FINANCE")
+        )
+      ),
+      React.createElement("button", { onClick: p.onLogout, title: "Logout", style: { background: T.coralDim, border: "1px solid " + T.coral + "55", color: T.coral, padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", gap: 4 } }, "🚪 Keluar")
     ),
     React.createElement(
       "div",
-      { style: { padding: "12px 8px 6px", flex: 1, overflowY: "auto" } },
+      { className: "sidebar-menu-list", style: { padding: "12px 8px 6px", flex: 1, overflowY: "auto" } },
       React.createElement("div", { style: { fontSize: 10, color: T.textDim, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", padding: "0 10px", marginBottom: 8 } }, "MENU"),
       nav.map(function (item) {
         var active = p.view === item.id;
@@ -966,7 +971,7 @@ function Sidebar(p) {
       "div",
       { style: { padding: "12px 14px", borderTop: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between" } },
       React.createElement("div", null, React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: T.text } }, p.user.name), React.createElement("div", { style: { fontSize: 10, color: T.textDim } }, "@" + (p.user.username || "user"))),
-      React.createElement("button", { onClick: p.onLogout, title: "Logout", style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 7, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" } }, "⏏")
+      React.createElement("button", { onClick: p.onLogout, title: "Logout", style: { background: T.coralDim, border: "1px solid " + T.coral + "55", color: T.coral, padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 800 } }, "Keluar")
     )
   );
 }
@@ -1069,7 +1074,7 @@ function App() {
     { style: { background: T.bg, width: "100vw", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color: T.text } },
     React.createElement(
       "div",
-      { style: { flex: 1, display: "flex", overflow: "hidden" } },
+      { className: "app-main-layout", style: { flex: 1, display: "flex", overflow: "hidden" } },
       React.createElement(Sidebar, { view: view, onView: setView, user: user, onLogout: handleLogout }),
       React.createElement(
         "div",
@@ -1077,18 +1082,19 @@ function App() {
         // Top Toolbar
         React.createElement(
           "div",
-          { style: { padding: "14px 28px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between", background: T.surface, flexShrink: 0 } },
+          { className: "top-toolbar", style: { padding: "12px 20px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between", background: T.surface, flexShrink: 0 } },
           React.createElement(
             "div",
             { style: { display: "flex", alignItems: "center", gap: 10 } },
-            React.createElement("span", { style: { fontSize: 16 } }, view === "dashboard" ? "🌖" : view === "pemasukan" ? "👛" : view === "pengeluaran" ? "🧾" : "🏛️"),
-            React.createElement("span", { style: { fontSize: 12, color: T.textSub, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 } }, view === "dashboard" ? "RINGKASAN" : view.toUpperCase())
+            React.createElement("span", { style: { fontSize: 16 } }, view === "dashboard" ? "🏠" : view === "pemasukan" ? "👛" : view === "pengeluaran" ? "🧾" : view === "tabungan" ? "🏛️" : view === "analisis-bulanan" ? "🌖" : "📊"),
+            React.createElement("span", { style: { fontSize: 12, color: T.textSub, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 } }, view === "dashboard" ? "RINGKASAN" : view.replace("-", " ").toUpperCase())
           ),
           React.createElement(
             "div",
-            { style: { display: "flex", gap: 10, alignItems: "center" } },
+            { className: "top-toolbar-actions", style: { display: "flex", gap: 8, alignItems: "center" } },
             React.createElement(Btn, { color: T.sage, onClick: function () { setEditInc(null); setSIF(true); } }, "+ Pemasukan"),
-            React.createElement(Btn, { color: T.coral, onClick: function () { setEditExp(null); setSEF(true); } }, "+ Pengeluaran")
+            React.createElement(Btn, { color: T.coral, onClick: function () { setEditExp(null); setSEF(true); } }, "+ Pengeluaran"),
+            React.createElement(Btn, { color: T.coralDim, style: { border: "1px solid " + T.coral + "55", color: T.coral }, onClick: handleLogout }, "🚪 Keluar")
           )
         ),
         (function () {
