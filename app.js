@@ -1026,7 +1026,6 @@ function App() {
           React.createElement(
             "div",
             { style: { display: "flex", gap: 10, alignItems: "center" } },
-            React.createElement("span", { style: { background: T.tealDim, color: T.teal, border: "1px solid " + T.teal + "40", padding: "4px 12px", borderRadius: 8, fontSize: 11, fontWeight: 800 } }, "Periode: Sekarang"),
             React.createElement(Btn, { color: T.sage, onClick: function () { setEditInc(null); setSIF(true); } }, "+ Pemasukan"),
             React.createElement(Btn, { color: T.coral, onClick: function () { setEditExp(null); setSEF(true); } }, "+ Pengeluaran")
           )
