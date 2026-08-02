@@ -144,22 +144,27 @@ function ConfirmModal(p){
 function AuthScreen(p){
   var _m=useState("login"),mode=_m[0],setMode=_m[1];
   var _e=useState(""),email=_e[0],setEmail=_e[1];
+  var _u=useState(""),username=_u[0],setUsername=_u[1];
   var _pw=useState(""),pw=_pw[0],setPw=_pw[1];
-  var _n=useState(""),name=_n[0],setName=_n[1];
   var _l=useState(false),loading=_l[0],setLoading=_l[1];
   var _er=useState(""),err=_er[0],setErr=_er[1];
 
   async function submit(){
     setErr("");
-    if(!email.trim()||!pw){setErr("Email dan password wajib diisi.");return;}
-    if(mode==="register"&&!name.trim()){setErr("Nama wajib diisi.");return;}
+    if(mode==="register"){
+      if(!email.trim()){setErr("Email wajib diisi.");return;}
+      if(email.indexOf("@")<0){setErr("Format email tidak valid (contoh: nama@gmail.com).");return;}
+      if(!username.trim()){setErr("Username wajib diisi.");return;}
+    }else{
+      if(!username.trim()&&!email.trim()){setErr("Username atau Email dan password wajib diisi.");return;}
+    }
+    if(!pw){setErr("Password wajib diisi.");return;}
     if(pw.length<6){setErr("Password minimal 6 karakter.");return;}
     setLoading(true);
-    var clean=email.trim().toLowerCase();
     try{
       var result = mode==="register"
-        ? await window.Api.register(clean, pw, name.trim())
-        : await window.Api.login(clean, pw);
+        ? await window.Api.register(email.trim(), username.trim(), pw)
+        : await window.Api.login(username.trim()||email.trim(), pw);
       p.onAuth(result.user);
     }catch(e){
       setErr(e.message || "Terjadi kesalahan. Coba lagi.");
@@ -179,12 +184,12 @@ function AuthScreen(p){
         ["login","register"].map(function(m){return React.createElement("button",{key:m,onClick:function(){setMode(m);setErr("");},style:{flex:1,padding:"9px 0",borderRadius:7,border:"none",background:mode===m?T.tealDim:"transparent",color:mode===m?T.teal:T.textSub,fontWeight:700,fontSize:13,cursor:"pointer"}},m==="login"?"Masuk":"Daftar");})
       ),
       mode==="register"&&React.createElement("div",{style:{marginBottom:14}},
-        React.createElement("label",{style:{display:"block",fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.7,marginBottom:6}},"Nama"),
-        React.createElement("input",{value:name,onChange:function(e){setName(e.target.value);},placeholder:"Nama lengkap",style:inp})
+        React.createElement("label",{style:{display:"block",fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.7,marginBottom:6}},"Email"),
+        React.createElement("input",{type:"email",value:email,onChange:function(e){setEmail(e.target.value);},placeholder:"kamu@email.com",style:inp})
       ),
       React.createElement("div",{style:{marginBottom:14}},
-        React.createElement("label",{style:{display:"block",fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.7,marginBottom:6}},"Email"),
-        React.createElement("input",{type:"email",value:email,onChange:function(e){setEmail(e.target.value);},placeholder:"kamu@email.com",style:inp,onKeyDown:function(e){if(e.key==="Enter")submit();}})
+        React.createElement("label",{style:{display:"block",fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.7,marginBottom:6}},mode==="register"?"Username":"Username / Email"),
+        React.createElement("input",{type:"text",value:username,onChange:function(e){setUsername(e.target.value);},placeholder:mode==="register"?"Pilih username kamu":"Username atau email kamu",style:inp,onKeyDown:function(e){if(e.key==="Enter")submit();}})
       ),
       React.createElement("div",{style:{marginBottom:20}},
         React.createElement("label",{style:{display:"block",fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.7,marginBottom:6}},"Password"),
@@ -196,6 +201,41 @@ function AuthScreen(p){
         mode==="login"?"Belum punya akun? ":"Sudah punya akun? ",
         React.createElement("button",{onClick:function(){setMode(mode==="login"?"register":"login");setErr("");},style:{background:"none",border:"none",color:T.teal,fontWeight:700,cursor:"pointer",fontSize:12}},mode==="login"?"Daftar di sini":"Masuk di sini")
       )
+    )
+  );
+}
+
+// ── Onboarding Name Modal ──────────────────────────────────────────────────────
+function NameOnboardingModal(p){
+  var _n=useState(""),name=_n[0],setName=_n[1];
+  var _e=useState(""),err=_e[0],setErr=_e[1];
+  var _l=useState(false),loading=_l[0],setLoading=_l[1];
+
+  function save(){
+    if(!name.trim()){setErr("Nama lengkap / nama akun wajib diisi.");return;}
+    setLoading(true);
+    setErr("");
+    window.Api.updateName(name.trim()).then(function(res){
+      p.onSave(res.user);
+    }).catch(function(e){
+      setErr(e.message||"Gagal menyimpan nama.");
+      setLoading(false);
+    });
+  }
+
+  var inp={width:"100%",background:T.panel,border:"1.5px solid "+T.border,borderRadius:10,padding:"11px 14px",color:T.text,fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"inherit"};
+
+  return React.createElement(Modal,{open:p.open,onClose:function(){},title:"🎉 Selamat Datang di KeuanganKu!",width:440},
+    React.createElement("p",{style:{color:T.textSub,fontSize:13,lineHeight:1.6,marginBottom:18}},
+      "Akun Anda berhasil dibuat! Masukkan Nama Lengkap atau Nama Akun Anda untuk ditampilkan di aplikasi."
+    ),
+    React.createElement("div",{style:{marginBottom:16}},
+      React.createElement("label",{style:{display:"block",fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.7,marginBottom:6}},"Nama Lengkap / Nama Akun"),
+      React.createElement("input",{value:name,onChange:function(e){setName(e.target.value);},placeholder:"Contoh: Rendi Ardiansyah",style:inp,onKeyDown:function(e){if(e.key==="Enter")save();},autoFocus:true})
+    ),
+    err&&React.createElement("div",{style:{color:T.coral,fontSize:12,marginBottom:14,fontWeight:600}},"⚠️ ",err),
+    React.createElement("div",{style:{display:"flex",justifyContent:"flex-end",marginTop:20,paddingTop:16,borderTop:"1px solid "+T.border}},
+      React.createElement(Btn,{color:T.teal,onClick:save,disabled:loading},loading?"Memproses...":"Simpan & Lanjutkan →")
     )
   );
 }
@@ -883,7 +923,7 @@ function Sidebar(p){
       React.createElement("button",{onClick:p.onAddMonth,style:{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px dashed "+T.teal+"55",background:T.tealDim,color:T.teal,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:8}},"＋ Periode Baru")
     ),
     React.createElement("div",{style:{padding:"10px 14px",borderTop:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"space-between"}},
-      React.createElement("div",null,React.createElement("div",{style:{fontSize:12,fontWeight:700,color:T.text}},p.user.name),React.createElement("div",{style:{fontSize:10,color:T.textDim}},p.user.email)),
+      React.createElement("div",null,React.createElement("div",{style:{fontSize:12,fontWeight:700,color:T.text}},p.user.name),React.createElement("div",{style:{fontSize:10,color:T.textDim}},"@"+(p.user.username||"user"))),
       React.createElement("button",{onClick:p.onLogout,title:"Logout",style:{background:T.coralDim,border:"1px solid "+T.coral+"30",color:T.coral,width:28,height:28,borderRadius:7,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}},"⏏")
     )
   );
@@ -1048,6 +1088,7 @@ function App(){
     React.createElement(IncomeForm,{open:showIncForm,onClose:function(){setSIF(false);setEditInc(null);},onSave:saveIncome,activeYear:aY,activeMonth:aMI,initial:editingInc,showToast:tk.show}),
     React.createElement(AddMonthModal,{open:showAddMonth,onClose:function(){setSAM(false);},onAdd:addMonth,existingKeys:months.map(function(m){return m.key;}),showToast:tk.show}),
     React.createElement(ConfirmModal,{open:!!deleteTarget,message:"Yakin ingin menghapus transaksi ini? Data tidak bisa dikembalikan.",onConfirm:confirmDelete,onCancel:function(){setDT(null);}}),
+    React.createElement(NameOnboardingModal,{open:user&&(!user.name||!user.name.trim()),onSave:function(u){setUser(u);tk.show("Nama akun berhasil disimpan!");}}),
     React.createElement(Toast,{toast:tk.toast})
   );
 }

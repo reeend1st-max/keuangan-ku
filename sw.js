@@ -1,4 +1,4 @@
-const CACHE_NAME = "keuanganku-v1";
+const CACHE_NAME = "keuanganku-v2";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -37,20 +37,18 @@ self.addEventListener("fetch", function (e) {
   if (e.request.url.indexOf("supabase.co") !== -1) return;
   if (e.request.url.indexOf("/config.js") !== -1) return;
 
+  // Network-first strategy: Always fetch fresh code from network, fallback to cache if offline.
   e.respondWith(
-    caches.match(e.request).then(function (cached) {
-      return (
-        cached ||
-        fetch(e.request).then(function (res) {
-          var clone = res.clone();
-          caches.open(CACHE_NAME).then(function (cache) {
-            cache.put(e.request, clone);
-          });
-          return res;
-        })
-      );
-    }).catch(function () {
-      return caches.match("/");
-    })
+    fetch(e.request)
+      .then(function (res) {
+        var clone = res.clone();
+        caches.open(CACHE_NAME).then(function (cache) {
+          cache.put(e.request, clone);
+        });
+        return res;
+      })
+      .catch(function () {
+        return caches.match(e.request);
+      })
   );
 });
