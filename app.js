@@ -88,46 +88,27 @@ function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
+var MONTH_NAMES = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+
 // ── Toast Hook ────────────────────────────────────────────────────────────────
 function useToast() {
-  var _t = useState(null),
-    toast = _t[0],
-    setToast = _t[1];
+  var _t = useState(null), toast = _t[0], setToast = _t[1];
   var show = useCallback(function (msg, type) {
     setToast({ msg: msg, type: type || "info", id: uid() });
   }, []);
-  var hide = useCallback(function () {
-    setToast(null);
-  }, []);
-  return { toast: toast, show: show, hide: hide };
+  return { toast: toast, show: show };
 }
 
 function Toast(p) {
   if (!p.toast) return null;
-  var bg =
-    p.toast.type === "error"
-      ? T.coral
-      : p.toast.type === "success"
-      ? T.sage
-      : T.sky;
+  var bg = p.toast.type === "error" ? T.coral : p.toast.type === "success" ? T.sage : T.sky;
   return React.createElement(
     "div",
     {
       style: {
-        position: "fixed",
-        bottom: 24,
-        right: 24,
-        background: bg,
-        color: "#fff",
-        padding: "12px 20px",
-        borderRadius: 10,
-        fontWeight: 700,
-        fontSize: 13,
-        boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
+        position: "fixed", bottom: 24, right: 24, background: bg, color: "#fff",
+        padding: "12px 20px", borderRadius: 10, fontWeight: 700, fontSize: 13,
+        boxShadow: "0 10px 30px rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", gap: 10,
       },
     },
     React.createElement("span", null, p.toast.msg)
@@ -139,48 +120,24 @@ function Chip(p) {
   var col = p.color || T.teal;
   return React.createElement(
     "span",
-    {
-      style: {
-        background: col + "20",
-        color: col,
-        border: "1px solid " + col + "40",
-        padding: "2px 8px",
-        borderRadius: 6,
-        fontSize: 11,
-        fontWeight: 700,
-      },
-    },
+    { style: { background: col + "20", color: col, border: "1px solid " + col + "40", padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700 } },
     p.label
   );
 }
 
 function Btn(p) {
-  var bg = p.outline
-    ? "transparent"
-    : p.color || T.teal;
+  var bg = p.outline ? "transparent" : p.color || T.teal;
   var color = p.outline ? p.color || T.teal : "#0A0E17";
-  var border = p.outline
-    ? "1.5px solid " + (p.color || T.teal)
-    : "none";
+  var border = p.outline ? "1.5px solid " + (p.color || T.teal) : "none";
   return React.createElement(
     "button",
     {
-      onClick: p.onClick,
-      disabled: p.disabled,
+      onClick: p.onClick, disabled: p.disabled,
       style: {
-        background: bg,
-        color: color,
-        border: border,
-        padding: p.small ? "6px 12px" : "9px 18px",
-        borderRadius: 9,
-        fontSize: p.small ? 12 : 13,
-        fontWeight: 700,
-        cursor: p.disabled ? "not-allowed" : "pointer",
-        opacity: p.disabled ? 0.5 : 1,
-        transition: "all .15s ease",
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
+        background: bg, color: color, border: border, padding: p.small ? "6px 12px" : "9px 18px",
+        borderRadius: 9, fontSize: p.small ? 12 : 13, fontWeight: 700,
+        cursor: p.disabled ? "not-allowed" : "pointer", opacity: p.disabled ? 0.5 : 1,
+        transition: "all .15s ease", display: "inline-flex", alignItems: "center", gap: 6,
       },
     },
     p.children
@@ -191,30 +148,11 @@ function DInput(p) {
   return React.createElement(
     "div",
     { style: { display: "flex", flexDirection: "column", gap: 5 } },
-    p.label &&
-      React.createElement(
-        "label",
-        { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } },
-        p.label
-      ),
+    p.label && React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, p.label),
     React.createElement("input", {
-      type: p.type || "text",
-      value: p.value,
-      onChange: function (e) {
-        p.onChange(e.target.value);
-      },
-      placeholder: p.placeholder,
-      autoFocus: p.autoFocus,
-      style: {
-        background: T.panel,
-        border: "1.5px solid " + T.border,
-        borderRadius: 9,
-        padding: "9px 12px",
-        color: T.text,
-        fontSize: 13,
-        outline: "none",
-        fontFamily: "inherit",
-      },
+      type: p.type || "text", value: p.value, onChange: function (e) { p.onChange(e.target.value); },
+      placeholder: p.placeholder, autoFocus: p.autoFocus,
+      style: { background: T.panel, border: "1.5px solid " + T.border, borderRadius: 9, padding: "9px 12px", color: T.text, fontSize: 13, outline: "none", fontFamily: "inherit" },
     })
   );
 }
@@ -223,30 +161,12 @@ function DSelect(p) {
   return React.createElement(
     "div",
     { style: { display: "flex", flexDirection: "column", gap: 5 } },
-    p.label &&
-      React.createElement(
-        "label",
-        { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } },
-        p.label
-      ),
+    p.label && React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, p.label),
     React.createElement(
       "select",
       {
-        value: p.value,
-        onChange: function (e) {
-          p.onChange(e.target.value);
-        },
-        style: {
-          background: T.panel,
-          border: "1.5px solid " + T.border,
-          borderRadius: 9,
-          padding: "9px 12px",
-          color: T.text,
-          fontSize: 13,
-          outline: "none",
-          fontFamily: "inherit",
-          cursor: "pointer",
-        },
+        value: p.value, onChange: function (e) { p.onChange(e.target.value); },
+        style: { background: T.panel, border: "1.5px solid " + T.border, borderRadius: 9, padding: "9px 12px", color: T.text, fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" },
       },
       p.options.map(function (opt) {
         var val = typeof opt === "string" ? opt : opt.value;
@@ -261,46 +181,18 @@ function DToggle(p) {
   return React.createElement(
     "div",
     { style: { display: "flex", flexDirection: "column", gap: 5 } },
-    p.label &&
-      React.createElement(
-        "label",
-        { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } },
-        p.label
-      ),
+    p.label && React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, p.label),
     React.createElement(
       "div",
-      {
-        style: {
-          display: "flex",
-          background: T.panel,
-          borderRadius: 9,
-          padding: 3,
-          border: "1.5px solid " + T.border,
-        },
-      },
+      { style: { display: "flex", background: T.panel, borderRadius: 9, padding: 3, border: "1.5px solid " + T.border } },
       p.options.map(function (opt, idx) {
         var active = p.value === opt;
         var activeColor = p.colors ? p.colors[idx] : T.teal;
         return React.createElement(
           "button",
           {
-            key: opt,
-            type: "button",
-            onClick: function () {
-              p.onChange(opt);
-            },
-            style: {
-              flex: 1,
-              padding: "7px 10px",
-              borderRadius: 7,
-              border: "none",
-              background: active ? activeColor : "transparent",
-              color: active ? "#0A0E17" : T.textSub,
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-              transition: "all .12s ease",
-            },
+            key: opt, type: "button", onClick: function () { p.onChange(opt); },
+            style: { flex: 1, padding: "7px 10px", borderRadius: 7, border: "none", background: active ? activeColor : "transparent", color: active ? "#0A0E17" : T.textSub, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .12s ease" },
           },
           opt
         );
@@ -313,59 +205,15 @@ function Modal(p) {
   if (!p.open) return null;
   return React.createElement(
     "div",
-    {
-      style: {
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.75)",
-        backdropFilter: "blur(4px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9000,
-        padding: 16,
-      },
-    },
+    { style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9000, padding: 16 } },
     React.createElement(
       "div",
-      {
-        style: {
-          background: T.card,
-          border: "1px solid " + T.border,
-          borderRadius: 16,
-          width: p.width || 440,
-          maxWidth: "100%",
-          padding: 24,
-          boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
-        },
-      },
+      { style: { background: T.card, border: "1px solid " + T.border, borderRadius: 16, width: p.width || 440, maxWidth: "100%", padding: 24, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)" } },
       React.createElement(
         "div",
-        {
-          style: {
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
-            paddingBottom: 12,
-            borderBottom: "1px solid " + T.border,
-          },
-        },
+        { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid " + T.border } },
         React.createElement("h3", { style: { margin: 0, fontSize: 16, fontWeight: 800, color: T.text } }, p.title),
-        React.createElement(
-          "button",
-          {
-            onClick: p.onClose,
-            style: {
-              background: "none",
-              border: "none",
-              color: T.textSub,
-              fontSize: 18,
-              cursor: "pointer",
-            },
-          },
-          "✕"
-        )
+        React.createElement("button", { onClick: p.onClose, style: { background: "none", border: "none", color: T.textSub, fontSize: 18, cursor: "pointer" } }, "✕")
       ),
       p.children
     )
@@ -428,30 +276,10 @@ function AuthScreen(p) {
 
   return React.createElement(
     "div",
-    {
-      style: {
-        background: T.bg,
-        width: "100vw",
-        height: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
-      },
-    },
+    { style: { background: T.bg, width: "100vw", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" } },
     React.createElement(
       "div",
-      {
-        style: {
-          width: 400,
-          maxWidth: "90vw",
-          background: T.card,
-          borderRadius: 20,
-          padding: "36px 32px",
-          border: "1px solid " + T.border,
-          boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
-        },
-      },
+      { style: { width: 400, maxWidth: "90vw", background: T.card, borderRadius: 20, padding: "36px 32px", border: "1px solid " + T.border, boxShadow: "0 24px 80px rgba(0,0,0,0.5)" } },
       React.createElement(
         "div",
         { style: { textAlign: "center", marginBottom: 24 } },
@@ -461,91 +289,18 @@ function AuthScreen(p) {
       ),
       React.createElement(
         "div",
-        {
-          style: {
-            display: "flex",
-            background: T.panel,
-            borderRadius: 10,
-            padding: 3,
-            marginBottom: 20,
-            border: "1px solid " + T.border,
-          },
-        },
-        React.createElement(
-          "button",
-          {
-            onClick: function () { setMode("login"); setErr(""); },
-            style: {
-              flex: 1, padding: "8px", borderRadius: 8, border: "none",
-              background: !isUp ? T.tealDim : "transparent",
-              color: !isUp ? T.teal : T.textSub, fontSize: 13, fontWeight: 700, cursor: "pointer",
-            },
-          },
-          "Masuk"
-        ),
-        React.createElement(
-          "button",
-          {
-            onClick: function () { setMode("signup"); setErr(""); },
-            style: {
-              flex: 1, padding: "8px", borderRadius: 8, border: "none",
-              background: isUp ? T.tealDim : "transparent",
-              color: isUp ? T.teal : T.textSub, fontSize: 13, fontWeight: 700, cursor: "pointer",
-            },
-          },
-          "Daftar"
-        )
+        { style: { display: "flex", background: T.panel, borderRadius: 10, padding: 3, marginBottom: 20, border: "1px solid " + T.border } },
+        React.createElement("button", { onClick: function () { setMode("login"); setErr(""); }, style: { flex: 1, padding: "8px", borderRadius: 8, border: "none", background: !isUp ? T.tealDim : "transparent", color: !isUp ? T.teal : T.textSub, fontSize: 13, fontWeight: 700, cursor: "pointer" } }, "Masuk"),
+        React.createElement("button", { onClick: function () { setMode("signup"); setErr(""); }, style: { flex: 1, padding: "8px", borderRadius: 8, border: "none", background: isUp ? T.tealDim : "transparent", color: isUp ? T.teal : T.textSub, fontSize: 13, fontWeight: 700, cursor: "pointer" } }, "Daftar")
       ),
       React.createElement(
         "form",
         { onSubmit: submit, style: { display: "flex", flexDirection: "column", gap: 14 } },
-        isUp &&
-          React.createElement(DInput, {
-            label: "Email",
-            value: email,
-            onChange: setEmail,
-            placeholder: "contoh@gmail.com",
-            type: "email",
-            autoFocus: true,
-          }),
-        React.createElement(DInput, {
-          label: isUp ? "Username" : "Email atau Username",
-          value: username,
-          onChange: setUsername,
-          placeholder: isUp ? "Pilih username kamu" : "Masukkan Email atau Username",
-          autoFocus: !isUp,
-        }),
-        React.createElement(DInput, {
-          label: "Password",
-          value: password,
-          onChange: setPassword,
-          type: "password",
-          placeholder: "Minimal 6 karakter",
-        }),
-        err &&
-          React.createElement(
-            "div",
-            {
-              style: {
-                background: T.coralDim, border: "1px solid " + T.coral + "30",
-                color: T.coral, padding: "10px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
-              },
-            },
-            "⚠️ ", err
-          ),
-        React.createElement(
-          "button",
-          {
-            type: "submit",
-            disabled: loading,
-            style: {
-              marginTop: 6, background: "linear-gradient(135deg," + T.teal + ",#00b882)",
-              color: "#0A0E17", border: "none", padding: 12, borderRadius: 10,
-              fontSize: 14, fontWeight: 800, cursor: loading ? "wait" : "pointer",
-            },
-          },
-          loading ? "Memproses..." : isUp ? "Buat Akun →" : "Masuk →"
-        )
+        isUp && React.createElement(DInput, { label: "Email", value: email, onChange: setEmail, placeholder: "contoh@gmail.com", type: "email", autoFocus: true }),
+        React.createElement(DInput, { label: isUp ? "Username" : "Email atau Username", value: username, onChange: setUsername, placeholder: isUp ? "Pilih username kamu" : "Masukkan Email atau Username", autoFocus: !isUp }),
+        React.createElement(DInput, { label: "Password", value: password, onChange: setPassword, type: "password", placeholder: "Minimal 6 karakter" }),
+        err && React.createElement("div", { style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, padding: "10px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600 } }, "⚠️ ", err),
+        React.createElement("button", { type: "submit", disabled: loading, style: { marginTop: 6, background: "linear-gradient(135deg," + T.teal + ",#00b882)", color: "#0A0E17", border: "none", padding: 12, borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: loading ? "wait" : "pointer" } }, loading ? "Memproses..." : isUp ? "Buat Akun →" : "Masuk →")
       )
     )
   );
@@ -576,22 +331,10 @@ function NameOnboardingModal(p) {
   return React.createElement(
     Modal,
     { open: p.open, title: "🎉 Selamat Datang di KeuanganKu!", width: 420 },
-    React.createElement("p", { style: { fontSize: 13, color: T.textSub, lineHeight: 1.6, marginBottom: 16 } },
-      "Silakan isi nama akun Anda (misalnya Nama Lengkap Anda) untuk personalisasi dashboard."
-    ),
-    React.createElement(DInput, {
-      label: "Nama Lengkap / Nama Akun",
-      value: name,
-      onChange: setName,
-      placeholder: "Contoh: Rendi / Rendi Prasetyo",
-      autoFocus: true,
-    }),
+    React.createElement("p", { style: { fontSize: 13, color: T.textSub, lineHeight: 1.6, marginBottom: 16 } }, "Silakan isi nama akun Anda (misalnya Nama Lengkap Anda) untuk personalisasi dashboard."),
+    React.createElement(DInput, { label: "Nama Lengkap / Nama Akun", value: name, onChange: setName, placeholder: "Contoh: Rendi / Rendi Prasetyo", autoFocus: true }),
     err && React.createElement("div", { style: { color: T.coral, fontSize: 12, marginTop: 10, fontWeight: 600 } }, "⚠️ ", err),
-    React.createElement(
-      "div",
-      { style: { display: "flex", justifyContent: "flex-end", marginTop: 20 } },
-      React.createElement(Btn, { color: T.teal, onClick: submit, disabled: loading }, loading ? "Menyimpan..." : "Simpan & Lanjutkan →")
-    )
+    React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginTop: 20 } }, React.createElement(Btn, { color: T.teal, onClick: submit, disabled: loading }, loading ? "Menyimpan..." : "Simpan & Lanjutkan →"))
   );
 }
 
@@ -660,16 +403,12 @@ function ExpenseForm(p) {
       React.createElement(DInput, { label: "Tanggal (DD/MM/YYYY)", value: tanggal, onChange: setTanggal }),
       React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: function (v) { setNominal(v.replace(/\D/g, "")); }, type: "number", placeholder: "0" })
     ),
-    React.createElement("div", { style: { marginBottom: 14 } },
-      React.createElement(DInput, { label: "Keperluan / Deskripsi", value: keperluan, onChange: setKeperluan, placeholder: "Contoh: Makan siang, Beli baju...", autoFocus: true })
-    ),
+    React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DInput, { label: "Keperluan / Deskripsi", value: keperluan, onChange: setKeperluan, placeholder: "Contoh: Makan siang, Beli baju...", autoFocus: true })),
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 } },
       React.createElement(DSelect, { label: "Kategori", value: kategori, onChange: setKategori, options: Object.keys(CATS) }),
       React.createElement(DToggle, { label: "Kebutuhan / Keinginan", value: nw, onChange: setNw, options: ["Need", "Want"], colors: [T.sky, T.violet] })
     ),
-    React.createElement("div", { style: { marginBottom: 14 } },
-      React.createElement(DSelect, { label: "Metode Pembayaran", value: bayar, onChange: setBayar, options: ["Transfer", "E-Wallet", "Cash", "QRIS", "Debit", "Kredit"] })
-    ),
+    React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DSelect, { label: "Metode Pembayaran", value: bayar, onChange: setBayar, options: ["Transfer", "E-Wallet", "Cash", "QRIS", "Debit", "Kredit"] })),
     React.createElement(DInput, { label: "Catatan Tambahan (opsional)", value: catatan, onChange: setCatatan, placeholder: "Keterangan tambahan..." }),
     err && React.createElement("div", { style: { color: T.coral, fontSize: 12, marginTop: 10, fontWeight: 600 } }, "⚠️ ", err),
     React.createElement(
@@ -1096,27 +835,106 @@ function PengeluaranView(p) {
   );
 }
 
+// ── Analisis Bulanan View ─────────────────────────────────────────────────────
+function AnalisisBulananView(p) {
+  var monthKeys = ["2026-05", "2026-06", "2026-07"];
+  return React.createElement(
+    "div",
+    { style: { padding: "24px 32px", overflowY: "auto", height: "100%" } },
+    React.createElement("h2", { style: { margin: "0 0 16px", fontSize: 20, fontWeight: 900, color: T.text } }, "📈 Analisis Keuangan Per Bulan"),
+    React.createElement(
+      "div",
+      { style: { display: "flex", flexDirection: "column", gap: 16 } },
+      monthKeys.map(function (mKey) {
+        var mInc = p.income.filter(function (i) { return mkKey(i.year, i.month) === mKey; });
+        var mExp = p.expenses.filter(function (e) { return mkKey(e.year, e.month) === mKey; });
+        var tInc = mInc.reduce(function (s, i) { return s + i.nominal; }, 0);
+        var tExp = mExp.reduce(function (s, e) { return s + e.nominal; }, 0);
+        var net = tInc - tExp;
+        var parts = mKey.split("-");
+        var label = MONTH_NAMES[parseInt(parts[1])] + " " + parts[0];
+
+        return React.createElement(
+          "div",
+          { key: mKey, style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, padding: 20 } },
+          React.createElement(
+            "div",
+            { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
+            React.createElement("div", { style: { fontSize: 16, fontWeight: 800, color: T.teal } }, "📅 " + label),
+            React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: net >= 0 ? T.sage : T.coral } }, "Sisa Cashflow: " + fmt(net))
+          ),
+          React.createElement(
+            "div",
+            { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 } },
+            React.createElement("div", { style: { background: T.sageDim, padding: 12, borderRadius: 10, border: "1px solid " + T.sage + "30" } },
+              React.createElement("div", { style: { fontSize: 11, color: T.sage, fontWeight: 700 } }, "Pemasukan (" + mInc.length + " transaksi)"),
+              React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: T.text, marginTop: 4 } }, fmt(tInc))
+            ),
+            React.createElement("div", { style: { background: T.coralDim, padding: 12, borderRadius: 10, border: "1px solid " + T.coral + "30" } },
+              React.createElement("div", { style: { fontSize: 11, color: T.coral, fontWeight: 700 } }, "Pengeluaran (" + mExp.length + " transaksi)"),
+              React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: T.text, marginTop: 4 } }, fmt(tExp))
+            )
+          )
+        );
+      })
+    )
+  );
+}
+
+// ── Analisis Tahunan View ─────────────────────────────────────────────────────
+function AnalisisTahunanView(p) {
+  var tInc = p.income.reduce(function (s, i) { return s + i.nominal; }, 0);
+  var tExp = p.expenses.reduce(function (s, e) { return s + e.nominal; }, 0);
+  var net = tInc - tExp;
+
+  return React.createElement(
+    "div",
+    { style: { padding: "24px 32px", overflowY: "auto", height: "100%" } },
+    React.createElement("h2", { style: { margin: "0 0 16px", fontSize: 20, fontWeight: 900, color: T.text } }, "📊 Analisis Keuangan Per Tahun (2026)"),
+    React.createElement(
+      "div",
+      { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, padding: 24, marginBottom: 20 } },
+      React.createElement("div", { style: { fontSize: 12, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "Ringkasan Cashflow Tahun 2026"),
+      React.createElement("div", { style: { fontSize: 32, fontWeight: 900, color: net >= 0 ? T.teal : T.coral, marginTop: 6 } }, fmt(net)),
+      React.createElement(
+        "div",
+        { style: { display: "flex", gap: 24, marginTop: 16, paddingTop: 16, borderTop: "1px solid " + T.border } },
+        React.createElement("div", null, React.createElement("div", { style: { fontSize: 11, color: T.textSub } }, "Total Pemasukan"), React.createElement("div", { style: { fontSize: 18, fontWeight: 800, color: T.sage } }, fmt(tInc))),
+        React.createElement("div", null, React.createElement("div", { style: { fontSize: 11, color: T.textSub } }, "Total Pengeluaran"), React.createElement("div", { style: { fontSize: 18, fontWeight: 800, color: T.coral } }, fmt(tExp)))
+      )
+    )
+  );
+}
+
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 function Sidebar(p) {
   var nav = [
-    { id: "dashboard", icon: "📊", label: "Ringkasan" },
-    { id: "pemasukan", icon: "📥", label: "Pemasukan" },
-    { id: "pengeluaran", icon: "📤", label: "Pengeluaran" },
-    { id: "tabungan", icon: "🏦", label: "Tabungan" },
+    { id: "dashboard", icon: "🏠", label: "Ringkasan" },
+    { id: "pemasukan", icon: "👛", label: "Pemasukan" },
+    { id: "pengeluaran", icon: "🧾", label: "Pengeluaran" },
+    { id: "tabungan", icon: "🏛️", label: "Tabungan" },
+    { id: "analisis-bulanan", icon: "🌖", label: "Analisis Bulanan" },
+    { id: "analisis-tahunan", icon: "📊", label: "Analisis Tahunan" },
   ];
+
   return React.createElement(
     "div",
     { style: { width: 224, background: T.sidebar, borderRight: "1px solid " + T.border, display: "flex", flexDirection: "column", flexShrink: 0, userSelect: "none" } },
     React.createElement(
       "div",
-      { style: { padding: "20px 18px 16px", borderBottom: "1px solid " + T.border } },
-      React.createElement("div", { style: { fontSize: 20, fontWeight: 900, color: T.teal, letterSpacing: -0.5 } }, "💰 Keuangan"),
-      React.createElement("div", { style: { fontSize: 10, color: T.textSub, marginTop: 3, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" } }, "Personal Finance")
+      { style: { padding: "20px 18px 16px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", gap: 10 } },
+      React.createElement("div", { style: { fontSize: 24 } }, "💰"),
+      React.createElement(
+        "div",
+        null,
+        React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: T.teal, letterSpacing: -0.5 } }, "Keuangan"),
+        React.createElement("div", { style: { fontSize: 9, color: T.textSub, marginTop: 1, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase" } }, "PERSONAL FINANCE")
+      )
     ),
     React.createElement(
       "div",
-      { style: { padding: "10px 8px 6px", flex: 1, overflowY: "auto" } },
-      React.createElement("div", { style: { fontSize: 10, color: T.textDim, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", padding: "0 8px", marginBottom: 6 } }, "Menu Utama"),
+      { style: { padding: "12px 8px 6px", flex: 1, overflowY: "auto" } },
+      React.createElement("div", { style: { fontSize: 10, color: T.textDim, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", padding: "0 10px", marginBottom: 8 } }, "MENU"),
       nav.map(function (item) {
         var active = p.view === item.id;
         return React.createElement(
@@ -1125,11 +943,11 @@ function Sidebar(p) {
             key: item.id,
             onClick: function () { p.onView(item.id); },
             style: {
-              width: "100%", padding: "10px 12px", borderRadius: 10, marginBottom: 3, border: "none",
+              width: "100%", padding: "10px 14px", borderRadius: 10, marginBottom: 4, border: active ? "1px solid " + T.teal + "55" : "none",
               background: active ? T.tealDim : "transparent",
               color: active ? T.teal : T.textSub, fontSize: 13, fontWeight: 700, cursor: "pointer",
-              display: "flex", alignItems: "center", gap: 10, textAlign: "left",
-              borderLeft: active ? "3px solid " + T.teal : "3px solid transparent",
+              display: "flex", alignItems: "center", gap: 12, textAlign: "left",
+              transition: "all .12s ease",
             },
           },
           React.createElement("span", { style: { fontSize: 16 } }, item.icon), item.label
@@ -1239,10 +1057,12 @@ function App() {
   if (loading) return React.createElement("div", { style: { background: T.bg, width: "100vw", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" } }, React.createElement("div", { style: { fontSize: 44 } }, "💰"), React.createElement("div", { style: { fontSize: 16, color: T.textSub, fontWeight: 600 } }, "Memuat data..."));
 
   var toolbarLabel =
-    view === "dashboard" ? "📊 Ringkasan Keuangan Utama" :
-    view === "pemasukan" ? "📥 Transaksi Pemasukan" :
-    view === "pengeluaran" ? "📤 Transaksi Pengeluaran" :
-    "🏦 Ringkasan Tabungan — setoran & penarikan";
+    view === "dashboard" ? "🏠 Ringkasan Keuangan Utama" :
+    view === "pemasukan" ? "👛 Transaksi Pemasukan" :
+    view === "pengeluaran" ? "🧾 Transaksi Pengeluaran" :
+    view === "tabungan" ? "🏛️ Ringkasan Tabungan — setoran & penarikan" :
+    view === "analisis-bulanan" ? "🌖 Analisis Keuangan Per Bulan" :
+    "📊 Analisis Keuangan Per Tahun";
 
   return React.createElement(
     "div",
@@ -1283,7 +1103,9 @@ function App() {
           view === "dashboard" && React.createElement(DashboardView, { expenses: expenses, income: income, savings: savings }),
           view === "pemasukan" && React.createElement(PemasukanView, { income: income, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } }),
           view === "pengeluaran" && React.createElement(PengeluaranView, { expenses: expenses, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id) { setDT({ type: "expense", id: id }); } }),
-          view === "tabungan" && React.createElement(TabunganView, { savings: savings, onSave: saveSaving, onDelete: deleteSaving })
+          view === "tabungan" && React.createElement(TabunganView, { savings: savings, onSave: saveSaving, onDelete: deleteSaving }),
+          view === "analisis-bulanan" && React.createElement(AnalisisBulananView, { expenses: expenses, income: income }),
+          view === "analisis-tahunan" && React.createElement(AnalisisTahunanView, { expenses: expenses, income: income })
         )
       )
     ),
