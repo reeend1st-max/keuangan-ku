@@ -88,6 +88,26 @@ function uid() {
 
 var MONTH_NAMES = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 
+function groupByMonth(items) {
+  var groups = {};
+  items.forEach(function (item) {
+    var key = mkKey(item.year, item.month);
+    if (!groups[key]) {
+      groups[key] = {
+        key: key,
+        year: item.year,
+        month: item.month,
+        items: []
+      };
+    }
+    groups[key].items.push(item);
+  });
+
+  return Object.values(groups).sort(function (a, b) {
+    return b.key.localeCompare(a.key);
+  });
+}
+
 // ── Toast Hook ────────────────────────────────────────────────────────────────
 function useToast() {
   var _t = useState(null), toast = _t[0], setToast = _t[1];
@@ -655,6 +675,7 @@ function PemasukanView(p) {
   var rows = [].concat(p.income).sort(function (a, b) { return parseD(b.tanggal) - parseD(a.tanggal); });
   var total = rows.reduce(function (s, i) { return s + i.nominal; }, 0);
   var mc = { Transfer: T.teal, "E-Wallet": T.violet, Cash: T.amber, QRIS: T.sky, Debit: T.sage, Kredit: T.coral };
+  var grouped = groupByMonth(rows);
 
   return React.createElement(
     "div",
@@ -681,20 +702,39 @@ function PemasukanView(p) {
             { style: { display: "grid", gridTemplateColumns: "130px 1fr 140px 180px 60px", padding: "10px 32px", background: T.surface, borderBottom: "1px solid " + T.border, position: "sticky", top: 0, zIndex: 10 } },
             ["Tanggal", "Sumber", "Metode", "Nominal", ""].map(function (h) { return React.createElement("div", { key: h, style: { fontSize: 11, fontWeight: 700, color: T.textSub, textTransform: "uppercase" } }, h); })
           ),
-          rows.map(function (item, i) {
+          grouped.map(function (g) {
+            var mTotal = g.items.reduce(function (s, i) { return s + i.nominal; }, 0);
+            var mLabel = MONTH_NAMES[g.month] + " " + g.year;
             return React.createElement(
               "div",
-              { key: item.id, style: { display: "grid", gridTemplateColumns: "130px 1fr 140px 180px 60px", padding: "13px 32px", alignItems: "center", borderBottom: "1px solid " + T.border, background: i % 2 === 0 ? "transparent" : T.panel } },
-              React.createElement("div", { style: { fontSize: 12, color: T.textSub, fontFamily: "monospace" } }, item.tanggal),
-              React.createElement("div", null, React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: T.text } }, item.sumber), item.catatan && React.createElement("div", { style: { fontSize: 11, color: T.textDim } }, item.catatan)),
-              React.createElement(Chip, { label: item.metode, color: mc[item.metode] || T.textSub }),
-              React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: T.sage } }, "+" + fmt(item.nominal)),
+              { key: g.key },
+              // Sekat Pergantian Bulan
               React.createElement(
                 "div",
-                { style: { display: "flex", gap: 4 } },
-                React.createElement("button", { onClick: function () { p.onEdit(item); }, style: { background: T.card, border: "1px solid " + T.border, color: T.textSub, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✏"),
-                React.createElement("button", { onClick: function () { p.onDelete(item.id); }, style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✕")
-              )
+                { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 32px", background: "linear-gradient(90deg, #10B98122, transparent)", borderTop: "1.5px solid " + T.sage + "40", borderBottom: "1.5px solid " + T.sage + "40" } },
+                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.teal, display: "flex", alignItems: "center", gap: 8 } },
+                  React.createElement("span", { style: { fontSize: 16 } }, "📅"),
+                  React.createElement("span", null, mLabel),
+                  React.createElement("span", { style: { fontSize: 11, color: T.textSub, fontWeight: 600 } }, "(" + g.items.length + " transaksi)")
+                ),
+                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.sage } }, "Total Pemasukan " + mLabel + ": " + fmt(mTotal))
+              ),
+              g.items.map(function (item, i) {
+                return React.createElement(
+                  "div",
+                  { key: item.id, style: { display: "grid", gridTemplateColumns: "130px 1fr 140px 180px 60px", padding: "13px 32px", alignItems: "center", borderBottom: "1px solid " + T.border, background: i % 2 === 0 ? "transparent" : T.panel } },
+                  React.createElement("div", { style: { fontSize: 12, color: T.textSub, fontFamily: "monospace" } }, item.tanggal),
+                  React.createElement("div", null, React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: T.text } }, item.sumber), item.catatan && React.createElement("div", { style: { fontSize: 11, color: T.textDim } }, item.catatan)),
+                  React.createElement(Chip, { label: item.metode, color: mc[item.metode] || T.textSub }),
+                  React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: T.sage } }, "+" + fmt(item.nominal)),
+                  React.createElement(
+                    "div",
+                    { style: { display: "flex", gap: 4 } },
+                    React.createElement("button", { onClick: function () { p.onEdit(item); }, style: { background: T.card, border: "1px solid " + T.border, color: T.textSub, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✏"),
+                    React.createElement("button", { onClick: function () { p.onDelete(item.id); }, style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✕")
+                  )
+                );
+              })
             );
           })
         )
@@ -716,6 +756,8 @@ function PengeluaranView(p) {
     if (search && e.keperluan.toLowerCase().indexOf(search.toLowerCase()) < 0) return false;
     return true;
   }).sort(function (a, b) { return parseD(b.tanggal) - parseD(a.tanggal); });
+
+  var grouped = groupByMonth(rows);
 
   function pill(label, active, col, fn) {
     return React.createElement("button", { key: label, onClick: fn, style: { padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, border: "1.5px solid " + (active ? col : T.border), background: active ? col + "22" : "transparent", color: active ? col : T.textSub, cursor: "pointer", whiteSpace: "nowrap" } }, label);
@@ -759,23 +801,42 @@ function PengeluaranView(p) {
             { style: { display: "grid", gridTemplateColumns: "120px 1fr 150px 100px 160px 80px 60px", padding: "10px 32px", background: T.surface, borderBottom: "1px solid " + T.border, position: "sticky", top: 0, zIndex: 10 } },
             ["Tanggal", "Keperluan", "Kategori", "NW", "Nominal", "Bayar", ""].map(function (h) { return React.createElement("div", { key: h, style: { fontSize: 11, fontWeight: 700, color: T.textSub, textTransform: "uppercase" } }, h); })
           ),
-          rows.map(function (item, i) {
-            var cfg = getCat(item.kategori);
+          grouped.map(function (g) {
+            var mTotal = g.items.reduce(function (s, e) { return s + e.nominal; }, 0);
+            var mLabel = MONTH_NAMES[g.month] + " " + g.year;
             return React.createElement(
               "div",
-              { key: item.id, style: { display: "grid", gridTemplateColumns: "120px 1fr 150px 100px 160px 80px 60px", padding: "12px 32px", alignItems: "center", borderBottom: "1px solid " + T.border, background: i % 2 === 0 ? "transparent" : T.panel } },
-              React.createElement("div", { style: { fontSize: 12, color: T.textSub, fontFamily: "monospace" } }, item.tanggal),
-              React.createElement("div", null, React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: T.text } }, item.keperluan), item.catatan && React.createElement("div", { style: { fontSize: 11, color: T.textDim } }, item.catatan)),
-              React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, React.createElement("span", null, cfg.emoji), React.createElement("span", { style: { fontSize: 12, color: T.text } }, item.kategori)),
-              React.createElement(Chip, { label: item.nw, color: item.nw === "Need" ? T.sky : T.violet }),
-              React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: T.coral } }, "-" + fmt(item.nominal)),
-              React.createElement(Chip, { label: item.bayar, color: T.textSub }),
+              { key: g.key },
+              // Sekat Pergantian Bulan
               React.createElement(
                 "div",
-                { style: { display: "flex", gap: 4 } },
-                React.createElement("button", { onClick: function () { p.onEdit(item); }, style: { background: T.card, border: "1px solid " + T.border, color: T.textSub, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✏"),
-                React.createElement("button", { onClick: function () { p.onDelete(item.id); }, style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✕")
-              )
+                { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 32px", background: "linear-gradient(90deg, #FF5C7C22, transparent)", borderTop: "1.5px solid " + T.coral + "40", borderBottom: "1.5px solid " + T.coral + "40" } },
+                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.coral, display: "flex", alignItems: "center", gap: 8 } },
+                  React.createElement("span", { style: { fontSize: 16 } }, "📅"),
+                  React.createElement("span", null, mLabel),
+                  React.createElement("span", { style: { fontSize: 11, color: T.textSub, fontWeight: 600 } }, "(" + g.items.length + " transaksi)")
+                ),
+                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.coral } }, "Total Pengeluaran " + mLabel + ": " + fmt(mTotal))
+              ),
+              g.items.map(function (item, i) {
+                var cfg = getCat(item.kategori);
+                return React.createElement(
+                  "div",
+                  { key: item.id, style: { display: "grid", gridTemplateColumns: "120px 1fr 150px 100px 160px 80px 60px", padding: "12px 32px", alignItems: "center", borderBottom: "1px solid " + T.border, background: i % 2 === 0 ? "transparent" : T.panel } },
+                  React.createElement("div", { style: { fontSize: 12, color: T.textSub, fontFamily: "monospace" } }, item.tanggal),
+                  React.createElement("div", null, React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: T.text } }, item.keperluan), item.catatan && React.createElement("div", { style: { fontSize: 11, color: T.textDim } }, item.catatan)),
+                  React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, React.createElement("span", null, cfg.emoji), React.createElement("span", { style: { fontSize: 12, color: T.text } }, item.kategori)),
+                  React.createElement(Chip, { label: item.nw, color: item.nw === "Need" ? T.sky : T.violet }),
+                  React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: T.coral } }, "-" + fmt(item.nominal)),
+                  React.createElement(Chip, { label: item.bayar, color: T.textSub }),
+                  React.createElement(
+                    "div",
+                    { style: { display: "flex", gap: 4 } },
+                    React.createElement("button", { onClick: function () { p.onEdit(item); }, style: { background: T.card, border: "1px solid " + T.border, color: T.textSub, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✏"),
+                    React.createElement("button", { onClick: function () { p.onDelete(item.id); }, style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✕")
+                  )
+                );
+              })
             );
           })
         )
@@ -784,7 +845,7 @@ function PengeluaranView(p) {
 
 // ── Analisis Bulanan View ─────────────────────────────────────────────────────
 function AnalisisBulananView(p) {
-  var monthKeys = ["2026-05", "2026-06", "2026-07"];
+  var monthKeys = ["2026-07", "2026-06", "2026-05"];
   return React.createElement(
     "div",
     { style: { padding: "24px 32px", overflowY: "auto", height: "100%" } },
@@ -1030,23 +1091,22 @@ function App() {
             React.createElement(Btn, { color: T.coral, onClick: function () { setEditExp(null); setSEF(true); } }, "+ Pengeluaran")
           )
         ),
-        React.createElement(
-          "div",
-          { style: { flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" } },
-          view === "dashboard" && React.createElement(DashboardView, { expenses: expenses, income: income, savings: savings }),
-          view === "pemasukan" && React.createElement(PemasukanView, { income: income, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } }),
-          view === "pengeluaran" && React.createElement(PengeluaranView, { expenses: expenses, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id) { setDT({ type: "expense", id: id }); } }),
-          view === "tabungan" && React.createElement(TabunganView, { savings: savings, onSave: saveSaving, onDelete: deleteSaving }),
-          view === "analisis-bulanan" && React.createElement(AnalisisBulananView, { expenses: expenses, income: income }),
-          view === "analisis-tahunan" && React.createElement(AnalisisTahunanView, { expenses: expenses, income: income })
-        )
+        (function () {
+          if (view === "dashboard") return React.createElement(DashboardView, { key: "view-dash", expenses: expenses, income: income, savings: savings });
+          if (view === "pemasukan") return React.createElement(PemasukanView, { key: "view-inc", income: income, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } });
+          if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id) { setDT({ type: "expense", id: id }); } });
+          if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, onSave: saveSaving, onDelete: deleteSaving });
+          if (view === "analisis-bulanan") return React.createElement(AnalisisBulananView, { key: "view-amb", expenses: expenses, income: income });
+          if (view === "analisis-tahunan") return React.createElement(AnalisisTahunanView, { key: "view-amt", expenses: expenses, income: income });
+          return null;
+        })()
       )
     ),
-    React.createElement(ExpenseForm, { open: showExpForm, onClose: function () { setSEF(false); setEditExp(null); }, onSave: saveExpense, initial: editingExp, showToast: tk.show }),
-    React.createElement(IncomeForm, { open: showIncForm, onClose: function () { setSIF(false); setEditInc(null); }, onSave: saveIncome, initial: editingInc, showToast: tk.show }),
-    React.createElement(ConfirmModal, { open: !!deleteTarget, message: "Yakin ingin menghapus transaksi ini? Data tidak bisa dikembalikan.", onConfirm: confirmDelete, onCancel: function () { setDT(null); } }),
-    React.createElement(NameOnboardingModal, { open: user && (!user.name || !user.name.trim()), onSave: function (u) { setUser(u); tk.show("Nama akun berhasil disimpan!"); } }),
-    React.createElement(Toast, { toast: tk.toast })
+    React.createElement(ExpenseForm, { key: "modal-exp", open: showExpForm, onClose: function () { setSEF(false); setEditExp(null); }, onSave: saveExpense, initial: editingExp, showToast: tk.show }),
+    React.createElement(IncomeForm, { key: "modal-inc", open: showIncForm, onClose: function () { setSIF(false); setEditInc(null); }, onSave: saveIncome, initial: editingInc, showToast: tk.show }),
+    React.createElement(ConfirmModal, { key: "modal-del", open: !!deleteTarget, message: "Yakin ingin menghapus transaksi ini? Data tidak bisa dikembalikan.", onConfirm: confirmDelete, onCancel: function () { setDT(null); } }),
+    React.createElement(NameOnboardingModal, { key: "modal-name", open: user && (!user.name || !user.name.trim()), onSave: function (u) { setUser(u); tk.show("Nama akun berhasil disimpan!"); } }),
+    React.createElement(Toast, { key: "toast-msg", toast: tk.toast })
   );
 }
 
