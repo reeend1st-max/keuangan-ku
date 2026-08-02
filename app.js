@@ -1091,23 +1091,22 @@ function App() {
             React.createElement(Btn, { color: T.coral, onClick: function () { setEditExp(null); setSEF(true); } }, "+ Pengeluaran")
           )
         ),
-        React.createElement(
-          "div",
-          { style: { flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" } },
-          view === "dashboard" && React.createElement(DashboardView, { expenses: expenses, income: income, savings: savings }),
-          view === "pemasukan" && React.createElement(PemasukanView, { income: income, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } }),
-          view === "pengeluaran" && React.createElement(PengeluaranView, { expenses: expenses, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id) { setDT({ type: "expense", id: id }); } }),
-          view === "tabungan" && React.createElement(TabunganView, { savings: savings, onSave: saveSaving, onDelete: deleteSaving }),
-          view === "analisis-bulanan" && React.createElement(AnalisisBulananView, { expenses: expenses, income: income }),
-          view === "analisis-tahunan" && React.createElement(AnalisisTahunanView, { expenses: expenses, income: income })
-        )
+        (function () {
+          if (view === "dashboard") return React.createElement(DashboardView, { key: "view-dash", expenses: expenses, income: income, savings: savings });
+          if (view === "pemasukan") return React.createElement(PemasukanView, { key: "view-inc", income: income, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } });
+          if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id) { setDT({ type: "expense", id: id }); } });
+          if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, onSave: saveSaving, onDelete: deleteSaving });
+          if (view === "analisis-bulanan") return React.createElement(AnalisisBulananView, { key: "view-amb", expenses: expenses, income: income });
+          if (view === "analisis-tahunan") return React.createElement(AnalisisTahunanView, { key: "view-amt", expenses: expenses, income: income });
+          return null;
+        })()
       )
     ),
-    React.createElement(ExpenseForm, { open: showExpForm, onClose: function () { setSEF(false); setEditExp(null); }, onSave: saveExpense, initial: editingExp, showToast: tk.show }),
-    React.createElement(IncomeForm, { open: showIncForm, onClose: function () { setSIF(false); setEditInc(null); }, onSave: saveIncome, initial: editingInc, showToast: tk.show }),
-    React.createElement(ConfirmModal, { open: !!deleteTarget, message: "Yakin ingin menghapus transaksi ini? Data tidak bisa dikembalikan.", onConfirm: confirmDelete, onCancel: function () { setDT(null); } }),
-    React.createElement(NameOnboardingModal, { open: user && (!user.name || !user.name.trim()), onSave: function (u) { setUser(u); tk.show("Nama akun berhasil disimpan!"); } }),
-    React.createElement(Toast, { toast: tk.toast })
+    React.createElement(ExpenseForm, { key: "modal-exp", open: showExpForm, onClose: function () { setSEF(false); setEditExp(null); }, onSave: saveExpense, initial: editingExp, showToast: tk.show }),
+    React.createElement(IncomeForm, { key: "modal-inc", open: showIncForm, onClose: function () { setSIF(false); setEditInc(null); }, onSave: saveIncome, initial: editingInc, showToast: tk.show }),
+    React.createElement(ConfirmModal, { key: "modal-del", open: !!deleteTarget, message: "Yakin ingin menghapus transaksi ini? Data tidak bisa dikembalikan.", onConfirm: confirmDelete, onCancel: function () { setDT(null); } }),
+    React.createElement(NameOnboardingModal, { key: "modal-name", open: user && (!user.name || !user.name.trim()), onSave: function (u) { setUser(u); tk.show("Nama akun berhasil disimpan!"); } }),
+    React.createElement(Toast, { key: "toast-msg", toast: tk.toast })
   );
 }
 
