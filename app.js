@@ -917,22 +917,16 @@ function Sidebar(p){
     {id:"analisis-bulanan",icon:"📈",label:"Analisis Bulanan"},
     {id:"analisis-tahunan",icon:"🗓️",label:"Analisis Tahunan"},
   ];
-  var years = ["2026", "2025", "Semua"];
   return React.createElement("div",{style:{width:224,background:T.sidebar,borderRight:"1px solid "+T.border,display:"flex",flexDirection:"column",flexShrink:0,userSelect:"none"}},
     React.createElement("div",{style:{padding:"20px 18px 16px",borderBottom:"1px solid "+T.border}},
       React.createElement("div",{style:{fontSize:20,fontWeight:900,color:T.teal,letterSpacing:-0.5}},"💰 Keuangan"),
       React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:3,fontWeight:600,letterSpacing:0.5,textTransform:"uppercase"}},"Personal Finance")
     ),
-    React.createElement("div",{style:{padding:"10px 8px 6px"}},
-      React.createElement("div",{style:{fontSize:10,color:T.textDim,fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",padding:"0 8px",marginBottom:6}},"Menu"),
-      nav.map(function(item){var active=p.view===item.id;return React.createElement("button",{key:item.id,onClick:function(){p.onView(item.id);},style:{width:"100%",padding:"9px 12px",borderRadius:10,marginBottom:2,border:"none",background:active?T.tealDim:"transparent",color:active?T.teal:T.textSub,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:10,textAlign:"left",borderLeft:active?"3px solid "+T.teal:"3px solid transparent"}},React.createElement("span",{style:{fontSize:15}},item.icon),item.label);})
+    React.createElement("div",{style:{padding:"10px 8px 6px",flex:1,overflowY:"auto"}},
+      React.createElement("div",{style:{fontSize:10,color:T.textDim,fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",padding:"0 8px",marginBottom:6}},"Menu Utama"),
+      nav.map(function(item){var active=p.view===item.id;return React.createElement("button",{key:item.id,onClick:function(){p.onView(item.id);},style:{width:"100%",padding:"10px 12px",borderRadius:10,marginBottom:3,border:"none",background:active?T.tealDim:"transparent",color:active?T.teal:T.textSub,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:10,textAlign:"left",borderLeft:active?"3px solid "+T.teal:"3px solid transparent"}},React.createElement("span",{style:{fontSize:16}},item.icon),item.label);})
     ),
-    React.createElement("div",{style:{height:1,background:T.border,margin:"4px 14px"}}),
-    React.createElement("div",{style:{flex:1,overflowY:"auto",padding:"6px 8px"}},
-      React.createElement("div",{style:{fontSize:10,color:T.textDim,fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",padding:"0 8px",marginBottom:6}},"Filter Tahun"),
-      years.map(function(y){var active=String(p.activeYear)===y;return React.createElement("button",{key:y,onClick:function(){p.onSelectYear(y);},style:{width:"100%",padding:"8px 12px",borderRadius:10,marginBottom:2,border:"none",background:active?T.tealDim:"transparent",color:active?T.teal:T.textSub,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"left",borderLeft:active?"3px solid "+T.teal:"3px solid transparent",display:"flex",alignItems:"center",gap:8}},React.createElement("span",{style:{fontSize:13}},"🗓️"),y==="Semua"?"Semua Waktu":"Tahun "+y);})
-    ),
-    React.createElement("div",{style:{padding:"10px 14px",borderTop:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"space-between"}},
+    React.createElement("div",{style:{padding:"12px 14px",borderTop:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"space-between"}},
       React.createElement("div",null,React.createElement("div",{style:{fontSize:12,fontWeight:700,color:T.text}},p.user.name),React.createElement("div",{style:{fontSize:10,color:T.textDim}},"@"+(p.user.username||"user"))),
       React.createElement("button",{onClick:p.onLogout,title:"Logout",style:{background:T.coralDim,border:"1px solid "+T.coral+"30",color:T.coral,width:28,height:28,borderRadius:7,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}},"⏏")
     )
@@ -948,7 +942,7 @@ function App(){
   var _inc=useState([]),income=_inc[0],setIncome=_inc[1];
   var _mo=useState([]),months=_mo[0],setMonths=_mo[1];
   var _sa=useState([]),savings=_sa[0],setSavings=_sa[1];
-  var _ay=useState("2026"),activeYear=_ay[0],setActiveYear=_ay[1];
+  var _ay=useState("Semua"),activeYear=_ay[0],setActiveYear=_ay[1];
   var _vw=useState("dashboard"),view=_vw[0],setView=_vw[1];
   var _sef=useState(false),showExpForm=_sef[0],setSEF=_sef[1];
   var _sif=useState(false),showIncForm=_sif[0],setSIF=_sif[1];
@@ -985,7 +979,7 @@ function App(){
   var handleAuth=useCallback(function(u){setUser(u);},[]);
   var handleLogout=useCallback(function(){
     window.Api.logout().finally(function(){
-      setUser(null);setExpenses([]);setIncome([]);setMonths([]);setSavings([]);setActiveYear("2026");setView("dashboard");
+      setUser(null);setExpenses([]);setIncome([]);setMonths([]);setSavings([]);setActiveYear("Semua");setView("dashboard");
     });
   },[]);
 
@@ -1034,26 +1028,23 @@ function App(){
   if(loading)return React.createElement("div",{style:{background:T.bg,width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}},React.createElement("div",{style:{fontSize:44}},"💰"),React.createElement("div",{style:{fontSize:16,color:T.textSub,fontWeight:600}},"Memuat data..."));
 
   var toolbarLabel=
-    view==="dashboard"?"📊 Ringkasan Keuangan — "+(activeYear==="Semua"?"Semua Waktu":"Tahun "+activeYear):
-    view==="pemasukan"?"📥 Pemasukan — "+(activeYear==="Semua"?"Semua Waktu":"Tahun "+activeYear):
-    view==="pengeluaran"?"📤 Pengeluaran — "+(activeYear==="Semua"?"Semua Waktu":"Tahun "+activeYear):
+    view==="dashboard"?"📊 Ringkasan Keuangan Utama":
+    view==="pemasukan"?"📥 Transaksi Pemasukan":
+    view==="pengeluaran"?"📤 Transaksi Pengeluaran":
     view==="tabungan"?"🏦 Ringkasan Tabungan — setoran & penarikan":
-    view==="analisis-bulanan"?"📈 Analisis tren per bulan":
-    "🗓️ Analisis per tahun";
+    view==="analisis-bulanan"?"📈 Analisis Tren Per Bulan":
+    "🗓️ Analisis Ringkasan Per Tahun";
 
   return React.createElement("div",{style:{background:T.bg,width:"100vw",height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",color:T.text}},
     React.createElement("div",{style:{height:40,background:T.sidebar,borderBottom:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 20px",flexShrink:0}},
       React.createElement("div",{style:{fontSize:12,color:T.textSub,fontWeight:600}},"💰 Keuangan Ku — Personal Finance Tracker"),
-      React.createElement("div",{style:{display:"flex",gap:12,alignItems:"center"}},
-        React.createElement("span",{style:{fontSize:12,color:T.teal,fontWeight:700}},"Filter: ",activeYear==="Semua"?"Semua Waktu":"Tahun "+activeYear),
-        React.createElement("div",{style:{fontSize:11,color:T.textDim}},new Date().toLocaleDateString("id-ID",{weekday:"long",year:"numeric",month:"long",day:"numeric"}))
-      )
+      React.createElement("div",{style:{fontSize:11,color:T.textDim}},new Date().toLocaleDateString("id-ID",{weekday:"long",year:"numeric",month:"long",day:"numeric"}))
     ),
     React.createElement("div",{style:{flex:1,display:"flex",overflow:"hidden"}},
-      React.createElement(Sidebar,{activeYear:activeYear,onSelectYear:setActiveYear,view:view,onView:setView,user:user,onLogout:handleLogout}),
+      React.createElement(Sidebar,{view:view,onView:setView,user:user,onLogout:handleLogout}),
       React.createElement("div",{style:{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}},
         React.createElement("div",{style:{padding:"10px 24px",borderBottom:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"space-between",background:T.surface,flexShrink:0}},
-          React.createElement("div",{style:{fontSize:13,color:T.textSub}},toolbarLabel),
+          React.createElement("div",{style:{fontSize:13,color:T.textSub,fontWeight:600}},toolbarLabel),
           React.createElement("div",{style:{display:"flex",gap:8}},
             view==="pengeluaran"&&React.createElement(Btn,{color:T.coral,onClick:function(){setEditExp(null);setSEF(true);}},"➕ Tambah Pengeluaran"),
             view==="pemasukan"&&React.createElement(Btn,{color:T.sage,onClick:function(){setEditInc(null);setSIF(true);}},"💵 Tambah Pemasukan"),
