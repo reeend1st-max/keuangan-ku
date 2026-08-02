@@ -511,6 +511,93 @@ function IncomeForm(p) {
   );
 }
 
+// ── Saving Form Modal (Setoran & Penarikan Tabungan) ───────────────────────
+function SavingForm(p) {
+  if (!p.open) return null;
+
+  var _t = useState(p.initial ? p.initial.tipe : (p.defaultTipe || "setoran")), tipe = _t[0], setTipe = _t[1];
+  var _n = useState(p.initial ? String(p.initial.nominal) : ""), nominal = _n[0], setNominal = _n[1];
+  var _dt = useState(p.initial ? p.initial.tanggal : todayStr()), tanggal = _dt[0], setTanggal = _dt[1];
+  var _c = useState(p.initial ? p.initial.catatan : ""), catatan = _c[0], setCatatan = _c[1];
+  var _e = useState(""), err = _e[0], setErr = _e[1];
+
+  useEffect(function () {
+    if (p.open) {
+      setTipe(p.initial ? p.initial.tipe : (p.defaultTipe || "setoran"));
+      setNominal(p.initial ? String(p.initial.nominal) : "");
+      setTanggal(p.initial ? p.initial.tanggal : todayStr());
+      setCatatan(p.initial ? p.initial.catatan : "");
+      setErr("");
+    }
+  }, [p.open, p.initial, p.defaultTipe]);
+
+  var save = function () {
+    var num = parseFloat(nominal.replace(/[^0-9]/g, ""));
+    if (isNaN(num) || num <= 0) return setErr("Masukkan nominal tabungan yang valid!");
+    if (!tanggal.trim()) return setErr("Masukkan tanggal!");
+
+    p.onSave({
+      id: p.initial ? p.initial.id : String(Date.now()),
+      tipe: tipe,
+      nominal: num,
+      tanggal: tanggal.trim(),
+      catatan: catatan.trim(),
+    });
+
+    p.showToast(p.initial ? "Mutasi tabungan diperbarui!" : (tipe === "setoran" ? "Setoran tabungan berhasil ditambahkan!" : "Penarikan tabungan berhasil ditambahkan!"), "success");
+    p.onClose();
+  };
+
+  var isStor = tipe === "setoran";
+
+  return React.createElement(
+    Modal,
+    { title: p.initial ? "Edit Mutasi Tabungan" : (isStor ? "💚 Setor Tabungan" : "🟡 Tarik Tabungan"), open: p.open, onClose: p.onClose },
+    React.createElement(
+      "div",
+      { style: { display: "flex", gap: 10, marginBottom: 16 } },
+      React.createElement(
+        "button",
+        {
+          onClick: function () { setTipe("setoran"); },
+          style: {
+            flex: 1, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 800, cursor: "pointer",
+            border: isStor ? "2px solid " + T.sage : "1px solid " + T.border,
+            background: isStor ? T.sageDim : T.panel, color: isStor ? T.sage : T.textSub,
+          },
+        },
+        "💚 Setoran Tabungan"
+      ),
+      React.createElement(
+        "button",
+        {
+          onClick: function () { setTipe("penarikan"); },
+          style: {
+            flex: 1, padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 800, cursor: "pointer",
+            border: !isStor ? "2px solid " + T.amber : "1px solid " + T.border,
+            background: !isStor ? T.amberDim : T.panel, color: !isStor ? T.amber : T.textSub,
+          },
+        },
+        "🟡 Penarikan Tabungan"
+      )
+    ),
+    React.createElement(
+      "div",
+      { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },
+      React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: setNominal, placeholder: "0", autoFocus: true }),
+      React.createElement(DInput, { label: "Tanggal", value: tanggal, onChange: setTanggal, placeholder: "DD/MM/YYYY" })
+    ),
+    React.createElement(DInput, { label: "Catatan / Keterangan", value: catatan, onChange: setCatatan, placeholder: "Contoh: Tabungan Nikah, Dana Darurat..." }),
+    err && React.createElement("div", { style: { color: T.coral, fontSize: 12, marginTop: 10, fontWeight: 600 } }, "⚠️ ", err),
+    React.createElement(
+      "div",
+      { style: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20, paddingTop: 16, borderTop: "1px solid " + T.border } },
+      React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onClose }, "Batal"),
+      React.createElement(Btn, { color: isStor ? T.sage : T.amber, onClick: save }, "💾 ", p.initial ? "Simpan Perubahan" : (isStor ? "Simpan Setoran" : "Simpan Penarikan"))
+    )
+  );
+}
+
 // ── Tabungan View ─────────────────────────────────────────────────────────────
 function TabunganView(p) {
   var setoran = p.savings.filter(function (s) { return s.tipe === "setoran"; });
@@ -524,30 +611,57 @@ function TabunganView(p) {
     { style: { padding: "24px 32px", overflowY: "auto", height: "100%" } },
     React.createElement(
       "div",
-      { style: { background: "linear-gradient(135deg,#06281e,#041812)", borderRadius: 18, padding: "24px 28px", border: "1px solid " + T.sage + "40", marginBottom: 20 } },
-      React.createElement("div", { style: { fontSize: 11, color: T.sage, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 } }, "Total Saldo Tabungan Saat Ini"),
-      React.createElement("div", { style: { fontSize: 36, fontWeight: 900, color: T.teal, marginTop: 4 } }, fmt(saldo)),
-      React.createElement("div", { style: { display: "flex", gap: 20, marginTop: 12, fontSize: 12, color: T.textSub } },
-        React.createElement("span", null, "💚 Total Ditabung: ", React.createElement("strong", { style: { color: T.sage } }, fmt(tSetor))),
-        React.createElement("span", null, "🟡 Total Ditarik: ", React.createElement("strong", { style: { color: T.amber } }, fmt(tTarik)))
+      { style: { background: "linear-gradient(135deg,#06281e,#041812)", borderRadius: 18, padding: "24px 28px", border: "1px solid " + T.sage + "40", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 } },
+      React.createElement(
+        "div",
+        null,
+        React.createElement("div", { style: { fontSize: 11, color: T.sage, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 } }, "Total Saldo Tabungan Saat Ini"),
+        React.createElement("div", { style: { fontSize: 36, fontWeight: 900, color: T.teal, marginTop: 4 } }, fmt(saldo)),
+        React.createElement(
+          "div",
+          { style: { display: "flex", gap: 20, marginTop: 12, fontSize: 12, color: T.textSub } },
+          React.createElement("span", null, "💚 Total Ditabung: ", React.createElement("strong", { style: { color: T.sage } }, fmt(tSetor))),
+          React.createElement("span", null, "🟡 Total Ditarik: ", React.createElement("strong", { style: { color: T.amber } }, fmt(tTarik)))
+        )
+      ),
+      React.createElement(
+        "div",
+        { style: { display: "flex", gap: 10, flexWrap: "wrap" } },
+        React.createElement(Btn, { color: T.sage, onClick: function () { p.onAdd("setoran"); } }, "💚 + Setor Tabungan"),
+        React.createElement(Btn, { color: T.amber, onClick: function () { p.onAdd("penarikan"); } }, "🟡 - Tarik Tabungan")
       )
     ),
     React.createElement(
       "div",
       { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, overflow: "hidden" } },
-      React.createElement("div", { style: { padding: "16px 20px", borderBottom: "1px solid " + T.border, fontWeight: 700, fontSize: 15 } }, "📋 Riwayat Mutasi Tabungan"),
+      React.createElement("div", { style: { padding: "16px 20px", borderBottom: "1px solid " + T.border, fontWeight: 700, fontSize: 15, display: "flex", justifyContent: "space-between", alignItems: "center" } },
+        React.createElement("span", null, "📋 Riwayat Mutasi Tabungan"),
+        React.createElement("span", { style: { fontSize: 12, color: T.textSub } }, p.savings.length + " transaksi")
+      ),
       p.savings.length === 0
         ? React.createElement("div", { style: { padding: 32, textAlign: "center", color: T.textSub } }, "Belum ada transaksi tabungan.")
-        : p.savings.map(function (item) {
+        : [].concat(p.savings).sort(function (a, b) { return parseD(b.tanggal) - parseD(a.tanggal); }).map(function (item) {
             var isStor = item.tipe === "setoran";
             return React.createElement(
               "div",
               { key: item.id, style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: "1px solid " + T.border } },
-              React.createElement("div", null,
+              React.createElement(
+                "div",
+                null,
                 React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: isStor ? T.sage : T.amber } }, isStor ? "💚 Setoran Tabungan" : "🟡 Penarikan Tabungan"),
                 React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, item.tanggal, item.catatan ? " · " + item.catatan : "")
               ),
-              React.createElement("div", { style: { fontSize: 15, fontWeight: 800, color: isStor ? T.sage : T.amber } }, (isStor ? "+" : "-") + fmt(item.nominal))
+              React.createElement(
+                "div",
+                { style: { display: "flex", alignItems: "center", gap: 12 } },
+                React.createElement("div", { style: { fontSize: 15, fontWeight: 800, color: isStor ? T.sage : T.amber } }, (isStor ? "+" : "-") + fmt(item.nominal)),
+                React.createElement(
+                  "div",
+                  { style: { display: "flex", gap: 4 } },
+                  React.createElement("button", { onClick: function () { p.onEdit(item); }, style: { background: T.card, border: "1px solid " + T.border, color: T.textSub, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✏"),
+                  React.createElement("button", { onClick: function () { p.onDelete(item.id); }, style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✕")
+                )
+              )
             );
           })
     )
@@ -987,8 +1101,11 @@ function App() {
   var _vw = useState("dashboard"), view = _vw[0], setView = _vw[1];
   var _sef = useState(false), showExpForm = _sef[0], setSEF = _sef[1];
   var _sif = useState(false), showIncForm = _sif[0], setSIF = _sif[1];
+  var _ssf = useState(false), showSavForm = _ssf[0], setSSF = _ssf[1];
   var _eex = useState(null), editingExp = _eex[0], setEditExp = _eex[1];
   var _ein = useState(null), editingInc = _ein[0], setEditInc = _ein[1];
+  var _esv = useState(null), editingSav = _esv[0], setEditSav = _esv[1];
+  var _dst = useState("setoran"), defaultSavTipe = _dst[0], setDST = _dst[1];
   var _dt = useState(null), deleteTarget = _dt[0], setDT = _dt[1];
   var tk = useToast();
 
@@ -1040,12 +1157,7 @@ function App() {
     window.Api.saveSaving(item).then(function (saved) {
       setSavings(function (p) { return p.some(function (s) { return s.id === saved.id; }) ? p.map(function (s) { return s.id === saved.id ? saved : s; }) : [].concat(p, [saved]); });
     }).catch(function (e) { tk.show(e.message || "Gagal menyimpan tabungan.", "error"); });
-  }, []);
-
-  var deleteSaving = useCallback(function (id) {
-    window.Api.deleteSaving(id).then(function () {
-      setSavings(function (p) { return p.filter(function (s) { return s.id !== id; }); });
-    }).catch(function (e) { tk.show(e.message || "Gagal menghapus.", "error"); });
+    setEditSav(null);
   }, []);
 
   var confirmDelete = function () {
@@ -1055,12 +1167,17 @@ function App() {
     if (type === "expense") {
       window.Api.deleteExpense(id).then(function () {
         setExpenses(function (p) { return p.filter(function (e) { return e.id !== id; }); });
-        tk.show("Transaksi dihapus", "info");
+        tk.show("Transaksi pengeluaran dihapus", "info");
       }).catch(function (e) { tk.show(e.message || "Gagal menghapus.", "error"); });
-    } else {
+    } else if (type === "income") {
       window.Api.deleteIncome(id).then(function () {
         setIncome(function (p) { return p.filter(function (i) { return i.id !== id; }); });
-        tk.show("Transaksi dihapus", "info");
+        tk.show("Transaksi pemasukan dihapus", "info");
+      }).catch(function (e) { tk.show(e.message || "Gagal menghapus.", "error"); });
+    } else if (type === "saving") {
+      window.Api.deleteSaving(id).then(function () {
+        setSavings(function (p) { return p.filter(function (s) { return s.id !== id; }); });
+        tk.show("Mutasi tabungan dihapus", "info");
       }).catch(function (e) { tk.show(e.message || "Gagal menghapus.", "error"); });
     }
   };
@@ -1101,7 +1218,7 @@ function App() {
           if (view === "dashboard") return React.createElement(DashboardView, { key: "view-dash", expenses: expenses, income: income, savings: savings });
           if (view === "pemasukan") return React.createElement(PemasukanView, { key: "view-inc", income: income, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } });
           if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id) { setDT({ type: "expense", id: id }); } });
-          if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, onSave: saveSaving, onDelete: deleteSaving });
+          if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, onAdd: function (tipe) { setDST(tipe || "setoran"); setEditSav(null); setSSF(true); }, onEdit: function (item) { setEditSav(item); setSSF(true); }, onDelete: function (id) { setDT({ type: "saving", id: id }); } });
           if (view === "analisis-bulanan") return React.createElement(AnalisisBulananView, { key: "view-amb", expenses: expenses, income: income });
           if (view === "analisis-tahunan") return React.createElement(AnalisisTahunanView, { key: "view-amt", expenses: expenses, income: income });
           return null;
@@ -1110,6 +1227,7 @@ function App() {
     ),
     React.createElement(ExpenseForm, { key: "modal-exp", open: showExpForm, onClose: function () { setSEF(false); setEditExp(null); }, onSave: saveExpense, initial: editingExp, showToast: tk.show }),
     React.createElement(IncomeForm, { key: "modal-inc", open: showIncForm, onClose: function () { setSIF(false); setEditInc(null); }, onSave: saveIncome, initial: editingInc, showToast: tk.show }),
+    React.createElement(SavingForm, { key: "modal-sav", open: showSavForm, onClose: function () { setSSF(false); setEditSav(null); }, onSave: saveSaving, initial: editingSav, defaultTipe: defaultSavTipe, showToast: tk.show }),
     React.createElement(ConfirmModal, { key: "modal-del", open: !!deleteTarget, message: "Yakin ingin menghapus transaksi ini? Data tidak bisa dikembalikan.", onConfirm: confirmDelete, onCancel: function () { setDT(null); } }),
     React.createElement(NameOnboardingModal, { key: "modal-name", open: user && (!user.name || !user.name.trim()), onSave: function (u) { setUser(u); tk.show("Nama akun berhasil disimpan!"); } }),
     React.createElement(Toast, { key: "toast-msg", toast: tk.toast })
