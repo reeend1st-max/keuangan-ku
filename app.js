@@ -450,26 +450,33 @@ function computeCarryOver(allMonths, expenses, income){
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 function DashboardView(p){
-  var m=p.allMonths.find(function(x){return x.key===p.activeKey;});
-  if(!m)return React.createElement(EmptyMonthMsg,null);
-  var mExp=p.expenses.filter(function(e){return mkKey(e.year,e.month)===p.activeKey;});
-  var mInc=p.income.filter(function(i){return mkKey(i.year,i.month)===p.activeKey;});
-  var tInc=mInc.reduce(function(s,i){return s+i.nominal;},0);
-  var tExp=mExp.reduce(function(s,e){return s+e.nominal;},0);
-  var carryData=computeCarryOver(p.allMonths,p.expenses,p.income);
-  var activeCarry=carryData.find(function(x){return x.key===p.activeKey;})||{saldoAwal:0,saldoAkhir:tInc-tExp};
-  var saldo=activeCarry.saldoAkhir;
-  var saldoAwal=activeCarry.saldoAwal;
-  var pct=(saldoAwal+tInc)>0?Math.min(100,(tExp/(saldoAwal+tInc))*100):tExp>0?100:0;
-  var totalSetoran=p.savings.filter(function(s){return s.tipe==="setoran";}).reduce(function(a,s){return a+s.nominal;},0);
-  var totalPenarikan=p.savings.filter(function(s){return s.tipe==="penarikan";}).reduce(function(a,s){return a+s.nominal;},0);
-  var saldoTab=totalSetoran-totalPenarikan;
-  var pctTab=totalSetoran>0?Math.min(100,(totalPenarikan/totalSetoran)*100):0;
-  var catMap=mExp.reduce(function(a,e){a[e.kategori]=(a[e.kategori]||0)+e.nominal;return a;},{});
-  var catArr=Object.entries(catMap).sort(function(a,b){return b[1]-a[1];});
-  var need=mExp.filter(function(e){return e.nw==="Need";}).reduce(function(s,e){return s+e.nominal;},0);
-  var want=mExp.filter(function(e){return e.nw==="Want";}).reduce(function(s,e){return s+e.nominal;},0);
-  var recent=[].concat(mExp).sort(function(a,b){return parseD(b.tanggal)-parseD(a.tanggal);}).slice(0,6);
+  var selYear = p.activeYear; // e.g. 2026 or "Semua"
+  
+  var totalIncAll = p.income.reduce(function(s,i){return s+i.nominal;},0);
+  var totalExpAll = p.expenses.reduce(function(s,e){return s+e.nominal;},0);
+  var saldoUtama = totalIncAll - totalExpAll;
+
+  var yInc = selYear === "Semua" ? p.income : p.income.filter(function(i){return i.year === Number(selYear);});
+  var yExp = selYear === "Semua" ? p.expenses : p.expenses.filter(function(e){return e.year === Number(selYear);});
+
+  var tInc = yInc.reduce(function(s,i){return s+i.nominal;},0);
+  var tExp = yExp.reduce(function(s,e){return s+e.nominal;},0);
+
+  var prevInc = selYear === "Semua" ? 0 : p.income.filter(function(i){return i.year < Number(selYear);}).reduce(function(s,i){return s+i.nominal;},0);
+  var prevExp = selYear === "Semua" ? 0 : p.expenses.filter(function(e){return e.year < Number(selYear);}).reduce(function(s,e){return s+e.nominal;},0);
+  var saldoAwal = prevInc - prevExp;
+
+  var totalSetoran = p.savings.filter(function(s){return s.tipe==="setoran";}).reduce(function(a,s){return a+s.nominal;},0);
+  var totalPenarikan = p.savings.filter(function(s){return s.tipe==="penarikan";}).reduce(function(a,s){return a+s.nominal;},0);
+  var saldoTab = totalSetoran - totalPenarikan;
+  var pctTab = totalSetoran > 0 ? Math.min(100, (totalPenarikan / totalSetoran) * 100) : 0;
+
+  var catMap = yExp.reduce(function(a,e){a[e.kategori]=(a[e.kategori]||0)+e.nominal;return a;},{});
+  var catArr = Object.entries(catMap).sort(function(a,b){return b[1]-a[1];});
+  var need = yExp.filter(function(e){return e.nw==="Need";}).reduce(function(s,e){return s+e.nominal;},0);
+  var want = yExp.filter(function(e){return e.nw==="Want";}).reduce(function(s,e){return s+e.nominal;},0);
+  var recent = [].concat(yExp).sort(function(a,b){return parseD(b.tanggal)-parseD(a.tanggal);}).slice(0,6);
+
   function Card(cp){
     return React.createElement("div",{style:{background:T.card,borderRadius:16,border:"1px solid "+T.border,overflow:"hidden",display:"flex",flexDirection:"column"}},
       React.createElement("div",{style:{padding:"14px 18px",borderBottom:"1px solid "+T.border,display:"flex",alignItems:"center",gap:8}},
@@ -480,30 +487,33 @@ function DashboardView(p){
       React.createElement("div",{style:{padding:"16px 18px",flex:1}},cp.children)
     );
   }
+
   return React.createElement("div",{style:{padding:"22px 26px",overflowY:"auto",height:"100%"}},
-    React.createElement("div",{style:{background:"linear-gradient(135deg,#0B1F3A,#061020)",borderRadius:18,padding:"20px 26px",border:"1px solid #1a3a6a",marginBottom:18,position:"relative",overflow:"hidden"}},
+    React.createElement("div",{style:{background:"linear-gradient(135deg,#0B1F3A,#061020)",borderRadius:18,padding:"22px 28px",border:"1px solid #1a3a6a",marginBottom:18,position:"relative",overflow:"hidden"}},
       React.createElement("div",{style:{position:"absolute",top:-20,right:-20,width:130,height:130,borderRadius:"50%",background:T.teal+"0a"}}),
-      React.createElement("div",{style:{fontSize:10,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:5}},"Saldo Keuangan — ",m.label),
-      React.createElement("div",{style:{fontSize:36,fontWeight:900,letterSpacing:-1.5,color:saldo>=0?T.teal:T.coral,marginBottom:4}},saldo<0?"-":"","Rp ",new Intl.NumberFormat("id-ID").format(Math.abs(saldo))),
-      React.createElement("div",{style:{fontSize:12,color:pct>90?T.coral:pct>70?T.amber:T.sage,fontWeight:700,marginBottom:12}},pct.toFixed(0),"% pemasukan sudah terpakai"),saldoAwal>0&&React.createElement("div",{style:{fontSize:11,color:T.textSub,marginBottom:4}},"Saldo awal (dari periode sebelumnya): ",React.createElement("span",{style:{color:T.teal,fontWeight:700}},fmt(saldoAwal))),
-      React.createElement("div",{style:{height:5,background:"#1a3a6a",borderRadius:3,overflow:"hidden"}},React.createElement("div",{style:{height:"100%",width:pct+"%",borderRadius:3,background:pct>90?T.coral:pct>70?T.amber:T.teal}}))
+      React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:6}},"💰 Total Saldo Keuangan Saat Ini"),
+      React.createElement("div",{style:{fontSize:38,fontWeight:900,letterSpacing:-1.5,color:saldoUtama>=0?T.teal:T.coral,marginBottom:6}},saldoUtama<0?"-":"","Rp ",new Intl.NumberFormat("id-ID").format(Math.abs(saldoUtama))),
+      selYear !== "Semua" && React.createElement("div",{style:{fontSize:12,color:T.textSub,display:"flex",gap:20,flexWrap:"wrap",marginTop:8,paddingTop:10,borderTop:"1px solid #1a3a6a"}},
+        React.createElement("span",null,"🏛️ Saldo Sisa Sebelumnya: ",React.createElement("strong",{style:{color:saldoAwal>=0?T.teal:T.coral}},fmt(saldoAwal))),
+        React.createElement("span",null,"📥 Pemasukan "+selYear+": ",React.createElement("strong",{style:{color:T.sage}},fmt(tInc))),
+        React.createElement("span",null,"📤 Pengeluaran "+selYear+": ",React.createElement("strong",{style:{color:T.coral}},fmt(tExp)))
+      )
     ),
     React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:18}},
-      React.createElement(Card,{icon:"💚",title:"Pemasukan",badge:mInc.length+" transaksi",badgeColor:T.sage},
+      React.createElement(Card,{icon:"💚",title:"Pemasukan",badge:yInc.length+" transaksi",badgeColor:T.sage},
         React.createElement("div",{style:{fontSize:26,fontWeight:900,color:T.sage,marginBottom:12}},fmt(tInc)),
         React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:5}},
-          mInc.length===0?React.createElement("div",{style:{fontSize:12,color:T.textDim,fontStyle:"italic"}},"Belum ada pemasukan"):
-          [].concat(mInc).sort(function(a,b){return parseD(b.tanggal)-parseD(a.tanggal);}).slice(0,5).map(function(item){
-            var mc={Transfer:T.teal,"E-Wallet":T.violet,Cash:T.amber,QRIS:T.sky,Debit:T.sage,Kredit:T.coral};
+          yInc.length===0?React.createElement("div",{style:{fontSize:12,color:T.textDim,fontStyle:"italic"}},"Belum ada pemasukan"):
+          [].concat(yInc).sort(function(a,b){return parseD(b.tanggal)-parseD(a.tanggal);}).slice(0,5).map(function(item){
             return React.createElement("div",{key:item.id,style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 10px",borderRadius:8,background:T.panel,gap:6}},
               React.createElement("div",{style:{minWidth:0,flex:1}},React.createElement("div",{style:{fontSize:12,fontWeight:600,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},item.sumber),React.createElement("div",{style:{fontSize:10,color:T.textSub}},item.tanggal)),
               React.createElement("div",{style:{fontSize:12,fontWeight:800,color:T.sage,whiteSpace:"nowrap"}},"+",fmtS(item.nominal))
             );
           })
         ),
-        mInc.length>5&&React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:6,textAlign:"right"}},"+",mInc.length-5," lainnya")
+        yInc.length>5&&React.createElement("div",{style:{fontSize:10,color:T.textSub,marginTop:6,textAlign:"right"}},"+",yInc.length-5," lainnya")
       ),
-      React.createElement(Card,{icon:"🔴",title:"Pengeluaran",badge:mExp.length+" transaksi",badgeColor:T.coral},
+      React.createElement(Card,{icon:"🔴",title:"Pengeluaran",badge:yExp.length+" transaksi",badgeColor:T.coral},
         React.createElement("div",{style:{fontSize:26,fontWeight:900,color:T.coral,marginBottom:12}},fmt(tExp)),
         catArr.length===0?React.createElement("div",{style:{fontSize:12,color:T.textDim,fontStyle:"italic"}},"Belum ada pengeluaran"):
         React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:7}},
@@ -551,39 +561,42 @@ function DashboardView(p){
           recent.map(function(e){var cfg=getCat(e.kategori);return React.createElement("div",{key:e.id,style:{display:"flex",alignItems:"center",gap:10,padding:"8px 18px",borderBottom:"1px solid "+T.border}},React.createElement("span",{style:{fontSize:15}},cfg.emoji),React.createElement("div",{style:{flex:1,minWidth:0}},React.createElement("div",{style:{fontSize:12,fontWeight:600,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},e.keperluan),React.createElement("div",{style:{fontSize:10,color:T.textSub}},e.tanggal," · ",e.kategori)),React.createElement(Chip,{label:e.nw,color:e.nw==="Need"?T.sky:T.violet}),React.createElement("span",{style:{fontSize:12,fontWeight:700,color:T.coral,whiteSpace:"nowrap"}},"-",fmtS(e.nominal)));})
         )
       ),
-      p.allMonths.length>1
-        ?React.createElement("div",{style:{background:T.card,borderRadius:16,border:"1px solid "+T.border,overflow:"hidden"}},
-            React.createElement("div",{style:{padding:"14px 18px",borderBottom:"1px solid "+T.border}},React.createElement("div",{style:{fontSize:14,fontWeight:700,color:T.text}},"📊 Cashflow Semua Periode")),
-            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",padding:"8px 16px",background:T.surface}},
-              ["Periode","Saldo Awal","Masuk","Keluar","Saldo Akhir"].map(function(h){return React.createElement("div",{key:h,style:{fontSize:10,fontWeight:700,color:T.textSub,textTransform:"uppercase",letterSpacing:0.4}},h);})
-            ),
-            [].concat(p.allMonths).reverse().map(function(mo,i){
-              var cRow=carryData.find(function(x){return x.key===mo.key;})||{inc:0,exp:0,saldoAwal:0,saldoAkhir:0};
-              var isA=mo.key===p.activeKey;
-              return React.createElement("div",{key:mo.key,style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",padding:"9px 16px",alignItems:"center",borderTop:i===0?"none":"1px solid "+T.border,background:isA?T.tealDim:"transparent"}},
-                React.createElement("div",{style:{fontSize:12,fontWeight:700,color:isA?T.teal:T.text}},mo.label),
-                React.createElement("div",{style:{fontSize:11,color:T.textSub}},fmtS(cRow.saldoAwal)),
-                React.createElement("div",{style:{fontSize:11,color:T.sage}},fmtS(cRow.inc)),
-                React.createElement("div",{style:{fontSize:11,color:T.coral}},fmtS(cRow.exp)),
-                React.createElement("div",{style:{fontSize:11,fontWeight:800,color:cRow.saldoAkhir>=0?T.sage:T.coral}},fmtS(cRow.saldoAkhir))
-              );
-            })
-          )
-        :React.createElement("div",{style:{background:T.card,borderRadius:16,border:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"center",color:T.textSub,fontSize:13,flexDirection:"column",gap:8}},React.createElement("div",{style:{fontSize:36}},"📅"),React.createElement("div",null,"Tambah periode kedua untuk melihat cashflow"))
+      React.createElement("div",{style:{background:T.card,borderRadius:16,border:"1px solid "+T.border,overflow:"hidden"}},
+        React.createElement("div",{style:{padding:"14px 18px",borderBottom:"1px solid "+T.border}},React.createElement("div",{style:{fontSize:14,fontWeight:700,color:T.text}},"📊 Ringkasan Keuangan per Tahun")),
+        React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",padding:"8px 16px",background:T.surface}},
+          ["Tahun","Masuk","Keluar","Sisa Saldo"].map(function(h){return React.createElement("div",{key:h,style:{fontSize:10,fontWeight:700,color:T.textSub,textTransform:"uppercase",letterSpacing:0.4}},h);})
+        ),
+        [2026, 2025].map(function(yr){
+          var yrInc = p.income.filter(function(i){return i.year===yr;}).reduce(function(s,i){return s+i.nominal;},0);
+          var yrExp = p.expenses.filter(function(e){return e.year===yr;}).reduce(function(s,e){return s+e.nominal;},0);
+          var net = yrInc - yrExp;
+          return React.createElement("div",{key:yr,style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",padding:"11px 16px",alignItems:"center",borderTop:"1px solid "+T.border}},
+            React.createElement("div",{style:{fontSize:13,fontWeight:800,color:T.text}},yr),
+            React.createElement("div",{style:{fontSize:12,color:T.sage,fontWeight:700}},fmtS(yrInc)),
+            React.createElement("div",{style:{fontSize:12,color:T.coral,fontWeight:700}},fmtS(yrExp)),
+            React.createElement("div",{style:{fontSize:12,fontWeight:800,color:net>=0?T.sage:T.coral}},(net>=0?"+":"")+fmtS(net))
+          );
+        })
+      )
     )
   );
 }
 
 // ── Pemasukan View ────────────────────────────────────────────────────────────
 function PemasukanView(p){
-  var m=p.allMonths.find(function(x){return x.key===p.activeKey;});
-  if(!m)return React.createElement(EmptyMonthMsg,null);
-  var rows=[].concat(p.income.filter(function(i){return mkKey(i.year,i.month)===p.activeKey;})).sort(function(a,b){return parseD(b.tanggal)-parseD(a.tanggal);});
-  var total=rows.reduce(function(s,i){return s+i.nominal;},0);
-  var mc={Transfer:T.teal,"E-Wallet":T.violet,Cash:T.amber,QRIS:T.sky,Debit:T.sage,Kredit:T.coral};
+  var selYear = p.activeYear;
+  var rows = selYear === "Semua" ? [].concat(p.income) : p.income.filter(function(i){return i.year === Number(selYear);});
+  rows.sort(function(a,b){return parseD(b.tanggal)-parseD(a.tanggal);});
+  var total = rows.reduce(function(s,i){return s+i.nominal;},0);
+  var mc = {Transfer:T.teal,"E-Wallet":T.violet,Cash:T.amber,QRIS:T.sky,Debit:T.sage,Kredit:T.coral};
+
   return React.createElement("div",{style:{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}},
     React.createElement("div",{style:{padding:"24px 32px 20px",borderBottom:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}},
-      React.createElement("div",null,React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:1}},"Pemasukan"),React.createElement("div",{style:{fontSize:28,fontWeight:900,color:T.sage,marginTop:4}},fmt(total)),React.createElement("div",{style:{fontSize:13,color:T.textSub,marginTop:4}},rows.length," transaksi · ",m.label)),
+      React.createElement("div",null,
+        React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:1}},"Pemasukan "+(selYear === "Semua" ? "Semua Waktu" : "Tahun " + selYear)),
+        React.createElement("div",{style:{fontSize:28,fontWeight:900,color:T.sage,marginTop:4}},fmt(total)),
+        React.createElement("div",{style:{fontSize:13,color:T.textSub,marginTop:4}},rows.length," transaksi")
+      ),
       React.createElement(Btn,{color:T.sage,onClick:p.onAdd},"💵 + Tambah Pemasukan")
     ),
     rows.length===0?React.createElement("div",{style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flex:1,color:T.textSub,gap:10}},React.createElement("div",{style:{fontSize:48}},"💵"),React.createElement("div",{style:{fontSize:15,fontWeight:700,color:T.text}},"Belum ada pemasukan")):
@@ -604,15 +617,15 @@ function PemasukanView(p){
 
 // ── Pengeluaran View ──────────────────────────────────────────────────────────
 function PengeluaranView(p){
-  var m=p.allMonths.find(function(x){return x.key===p.activeKey;});
-  if(!m)return React.createElement(EmptyMonthMsg,null);
+  var selYear = p.activeYear;
   var _fc=useState("Semua"),fCat=_fc[0],sFCat=_fc[1];
   var _fn=useState("Semua"),fNW=_fn[0],sFNW=_fn[1];
   var _fs=useState(""),search=_fs[0],sSearch=_fs[1];
-  var all=p.expenses.filter(function(e){return mkKey(e.year,e.month)===p.activeKey;});
-  var total=all.reduce(function(s,e){return s+e.nominal;},0);
-  var usedCats=[].concat([],all.map(function(e){return e.kategori;})).filter(function(v,i,a){return a.indexOf(v)===i;});
-  var rows=[].concat(all).filter(function(e){
+  
+  var all = selYear === "Semua" ? [].concat(p.expenses) : p.expenses.filter(function(e){return e.year === Number(selYear);});
+  var total = all.reduce(function(s,e){return s+e.nominal;},0);
+  var usedCats = [].concat([],all.map(function(e){return e.kategori;})).filter(function(v,i,a){return a.indexOf(v)===i;});
+  var rows = [].concat(all).filter(function(e){
     if(fCat!=="Semua"&&e.kategori!==fCat)return false;
     if(fNW!=="Semua"&&e.nw!==fNW)return false;
     if(search&&e.keperluan.toLowerCase().indexOf(search.toLowerCase())<0)return false;
@@ -622,7 +635,7 @@ function PengeluaranView(p){
   return React.createElement("div",{style:{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}},
     React.createElement("div",{style:{padding:"24px 32px 16px",borderBottom:"1px solid "+T.border,flexShrink:0}},
       React.createElement("div",{style:{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}},
-        React.createElement("div",null,React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:1}},"Pengeluaran"),React.createElement("div",{style:{fontSize:28,fontWeight:900,color:T.coral,marginTop:4}},fmt(total)),React.createElement("div",{style:{fontSize:13,color:T.textSub,marginTop:4}},all.length," transaksi · ",m.label)),
+        React.createElement("div",null,React.createElement("div",{style:{fontSize:11,color:T.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:1}},"Pengeluaran "+(selYear === "Semua" ? "Semua Waktu" : "Tahun " + selYear)),React.createElement("div",{style:{fontSize:28,fontWeight:900,color:T.coral,marginTop:4}},fmt(total)),React.createElement("div",{style:{fontSize:13,color:T.textSub,marginTop:4}},all.length," transaksi")),
         React.createElement(Btn,{color:T.coral,onClick:p.onAdd},"➕ Tambah Pengeluaran")
       ),
       React.createElement("div",{style:{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}},
@@ -904,6 +917,7 @@ function Sidebar(p){
     {id:"analisis-bulanan",icon:"📈",label:"Analisis Bulanan"},
     {id:"analisis-tahunan",icon:"🗓️",label:"Analisis Tahunan"},
   ];
+  var years = ["2026", "2025", "Semua"];
   return React.createElement("div",{style:{width:224,background:T.sidebar,borderRight:"1px solid "+T.border,display:"flex",flexDirection:"column",flexShrink:0,userSelect:"none"}},
     React.createElement("div",{style:{padding:"20px 18px 16px",borderBottom:"1px solid "+T.border}},
       React.createElement("div",{style:{fontSize:20,fontWeight:900,color:T.teal,letterSpacing:-0.5}},"💰 Keuangan"),
@@ -915,12 +929,8 @@ function Sidebar(p){
     ),
     React.createElement("div",{style:{height:1,background:T.border,margin:"4px 14px"}}),
     React.createElement("div",{style:{flex:1,overflowY:"auto",padding:"6px 8px"}},
-      React.createElement("div",{style:{fontSize:10,color:T.textDim,fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",padding:"0 8px",marginBottom:6}},"Periode"),
-      p.months.length===0&&React.createElement("div",{style:{fontSize:12,color:T.textDim,padding:"6px 12px",lineHeight:1.6}},"Belum ada periode."),
-      [].concat(p.months).reverse().map(function(m){var active=p.activeKey===m.key;return React.createElement("button",{key:m.key,onClick:function(){p.onSelect(m.key);},style:{width:"100%",padding:"8px 12px",borderRadius:10,marginBottom:2,border:"none",background:active?T.tealDim:"transparent",color:active?T.teal:T.textSub,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"left",borderLeft:active?"3px solid "+T.teal:"3px solid transparent",display:"flex",alignItems:"center",gap:8}},React.createElement("span",{style:{fontSize:13}},"📅"),m.label);})
-    ),
-    React.createElement("div",{style:{padding:"10px 8px",borderTop:"1px solid "+T.border}},
-      React.createElement("button",{onClick:p.onAddMonth,style:{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px dashed "+T.teal+"55",background:T.tealDim,color:T.teal,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:8}},"＋ Periode Baru")
+      React.createElement("div",{style:{fontSize:10,color:T.textDim,fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",padding:"0 8px",marginBottom:6}},"Filter Tahun"),
+      years.map(function(y){var active=String(p.activeYear)===y;return React.createElement("button",{key:y,onClick:function(){p.onSelectYear(y);},style:{width:"100%",padding:"8px 12px",borderRadius:10,marginBottom:2,border:"none",background:active?T.tealDim:"transparent",color:active?T.teal:T.textSub,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"left",borderLeft:active?"3px solid "+T.teal:"3px solid transparent",display:"flex",alignItems:"center",gap:8}},React.createElement("span",{style:{fontSize:13}},"🗓️"),y==="Semua"?"Semua Waktu":"Tahun "+y);})
     ),
     React.createElement("div",{style:{padding:"10px 14px",borderTop:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"space-between"}},
       React.createElement("div",null,React.createElement("div",{style:{fontSize:12,fontWeight:700,color:T.text}},p.user.name),React.createElement("div",{style:{fontSize:10,color:T.textDim}},"@"+(p.user.username||"user"))),
@@ -938,7 +948,7 @@ function App(){
   var _inc=useState([]),income=_inc[0],setIncome=_inc[1];
   var _mo=useState([]),months=_mo[0],setMonths=_mo[1];
   var _sa=useState([]),savings=_sa[0],setSavings=_sa[1];
-  var _ak=useState(null),activeKey=_ak[0],setActiveKey=_ak[1];
+  var _ay=useState("2026"),activeYear=_ay[0],setActiveYear=_ay[1];
   var _vw=useState("dashboard"),view=_vw[0],setView=_vw[1];
   var _sef=useState(false),showExpForm=_sef[0],setSEF=_sef[1];
   var _sif=useState(false),showIncForm=_sif[0],setSIF=_sif[1];
@@ -948,9 +958,6 @@ function App(){
   var _dt=useState(null),deleteTarget=_dt[0],setDT=_dt[1];
   var tk=useToast();
 
-  // On first mount, ask Supabase if there's already a valid session
-  // (e.g. user closed the tab and came back — Supabase persists the
-  // session token in localStorage automatically and keeps it refreshed).
   useEffect(function(){
     window.Api.getSession().then(function(u){
       if(u) setUser(u);
@@ -968,8 +975,6 @@ function App(){
       setIncome(data.income||[]);
       setMonths(data.months||[]);
       setSavings(data.savings||[]);
-      var mo=data.months||[];
-      if(mo.length>0)setActiveKey(mo[mo.length-1].key);
       setLoading(false);
     }).catch(function(e){
       tk.show(e.message||"Gagal memuat data.","error");
@@ -977,14 +982,10 @@ function App(){
     });
   },[user]);
 
-  // Data is written straight to Supabase on every mutation (see saveExpense,
-  // saveIncome, saveSaving, addMonth, confirmDelete below) — no need for a
-  // "sync whole array on change" effect like the old localStorage version.
-
   var handleAuth=useCallback(function(u){setUser(u);},[]);
   var handleLogout=useCallback(function(){
     window.Api.logout().finally(function(){
-      setUser(null);setExpenses([]);setIncome([]);setMonths([]);setSavings([]);setActiveKey(null);setView("dashboard");
+      setUser(null);setExpenses([]);setIncome([]);setMonths([]);setSavings([]);setActiveYear("2026");setView("dashboard");
     });
   },[]);
 
@@ -1027,47 +1028,35 @@ function App(){
       }).catch(function(e){tk.show(e.message||"Gagal menghapus.","error");});
     }
   };
-  var addMonth=function(obj){
-    window.Api.createMonth(obj.year,obj.month,obj.label).then(function(saved){
-      setMonths(function(p){return [].concat(p,[saved]).sort(function(a,b){return a.key.localeCompare(b.key);});});
-      setActiveKey(saved.key);
-      setView("pemasukan");
-    }).catch(function(e){tk.show(e.message||"Gagal membuat periode.","error");});
-  };
 
   if(checkingSession)return React.createElement("div",{style:{background:T.bg,width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}},React.createElement("div",{style:{fontSize:44}},"💰"),React.createElement("div",{style:{fontSize:16,color:T.textSub,fontWeight:600}},"Memeriksa sesi..."));
   if(!user)return React.createElement(AuthScreen,{onAuth:handleAuth});
   if(loading)return React.createElement("div",{style:{background:T.bg,width:"100vw",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16,fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}},React.createElement("div",{style:{fontSize:44}},"💰"),React.createElement("div",{style:{fontSize:16,color:T.textSub,fontWeight:600}},"Memuat data..."));
 
-  var aM=months.find(function(m){return m.key===activeKey;});
-  var aY=aM?aM.year:new Date().getFullYear();
-  var aMI=aM?aM.month:new Date().getMonth();
-
   var toolbarLabel=
-    view==="dashboard"?"📊 Ringkasan bulan ini":
-    view==="pemasukan"?"📥 Catat semua sumber pemasukan":
-    view==="pengeluaran"?"📤 Catat semua pengeluaran":
+    view==="dashboard"?"📊 Ringkasan Keuangan — "+(activeYear==="Semua"?"Semua Waktu":"Tahun "+activeYear):
+    view==="pemasukan"?"📥 Pemasukan — "+(activeYear==="Semua"?"Semua Waktu":"Tahun "+activeYear):
+    view==="pengeluaran"?"📤 Pengeluaran — "+(activeYear==="Semua"?"Semua Waktu":"Tahun "+activeYear):
     view==="tabungan"?"🏦 Ringkasan Tabungan — setoran & penarikan":
     view==="analisis-bulanan"?"📈 Analisis tren per bulan":
-    "🗓️ Analisis pengeluaran & pemasukan per tahun";
+    "🗓️ Analisis per tahun";
 
   return React.createElement("div",{style:{background:T.bg,width:"100vw",height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",color:T.text}},
     React.createElement("div",{style:{height:40,background:T.sidebar,borderBottom:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 20px",flexShrink:0}},
       React.createElement("div",{style:{fontSize:12,color:T.textSub,fontWeight:600}},"💰 Keuangan Ku — Personal Finance Tracker"),
       React.createElement("div",{style:{display:"flex",gap:12,alignItems:"center"}},
-        aM&&React.createElement("span",{style:{fontSize:12,color:T.teal,fontWeight:700}},"Periode: ",aM.label),
+        React.createElement("span",{style:{fontSize:12,color:T.teal,fontWeight:700}},"Filter: ",activeYear==="Semua"?"Semua Waktu":"Tahun "+activeYear),
         React.createElement("div",{style:{fontSize:11,color:T.textDim}},new Date().toLocaleDateString("id-ID",{weekday:"long",year:"numeric",month:"long",day:"numeric"}))
       )
     ),
     React.createElement("div",{style:{flex:1,display:"flex",overflow:"hidden"}},
-      React.createElement(Sidebar,{months:months,activeKey:activeKey,onSelect:function(k){setActiveKey(k);},onAddMonth:function(){setSAM(true);},view:view,onView:setView,user:user,onLogout:handleLogout}),
+      React.createElement(Sidebar,{activeYear:activeYear,onSelectYear:setActiveYear,view:view,onView:setView,user:user,onLogout:handleLogout}),
       React.createElement("div",{style:{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}},
         React.createElement("div",{style:{padding:"10px 24px",borderBottom:"1px solid "+T.border,display:"flex",alignItems:"center",justifyContent:"space-between",background:T.surface,flexShrink:0}},
           React.createElement("div",{style:{fontSize:13,color:T.textSub}},toolbarLabel),
           React.createElement("div",{style:{display:"flex",gap:8}},
             view==="pengeluaran"&&React.createElement(Btn,{color:T.coral,onClick:function(){setEditExp(null);setSEF(true);}},"➕ Tambah Pengeluaran"),
             view==="pemasukan"&&React.createElement(Btn,{color:T.sage,onClick:function(){setEditInc(null);setSIF(true);}},"💵 Tambah Pemasukan"),
-            
             view==="dashboard"&&React.createElement(React.Fragment,null,
               React.createElement(Btn,{color:T.sage,outline:true,onClick:function(){setEditInc(null);setSIF(true);}},"💵 + Pemasukan"),
               React.createElement(Btn,{color:T.coral,onClick:function(){setEditExp(null);setSEF(true);}},"➕ + Pengeluaran")
@@ -1075,18 +1064,17 @@ function App(){
           )
         ),
         React.createElement("div",{style:{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}},
-          view==="dashboard"&&React.createElement(DashboardView,{activeKey:activeKey,expenses:expenses,income:income,allMonths:months,savings:savings}),
-          view==="pemasukan"&&React.createElement(PemasukanView,{activeKey:activeKey,income:income,allMonths:months,onAdd:function(){setEditInc(null);setSIF(true);},onEdit:function(item){setEditInc(item);setSIF(true);},onDelete:function(id){setDT({type:"income",id:id});}}),
-          view==="pengeluaran"&&React.createElement(PengeluaranView,{activeKey:activeKey,expenses:expenses,allMonths:months,onAdd:function(){setEditExp(null);setSEF(true);},onEdit:function(item){setEditExp(item);setSEF(true);},onDelete:function(id){setDT({type:"expense",id:id});}}),
+          view==="dashboard"&&React.createElement(DashboardView,{activeYear:activeYear,expenses:expenses,income:income,allMonths:months,savings:savings}),
+          view==="pemasukan"&&React.createElement(PemasukanView,{activeYear:activeYear,income:income,allMonths:months,onAdd:function(){setEditInc(null);setSIF(true);},onEdit:function(item){setEditInc(item);setSIF(true);},onDelete:function(id){setDT({type:"income",id:id});}}),
+          view==="pengeluaran"&&React.createElement(PengeluaranView,{activeYear:activeYear,expenses:expenses,allMonths:months,onAdd:function(){setEditExp(null);setSEF(true);},onEdit:function(item){setEditExp(item);setSEF(true);},onDelete:function(id){setDT({type:"expense",id:id});}}),
           view==="tabungan"&&React.createElement(TabunganView,{savings:savings,onSave:saveSaving,onDelete:deleteSaving}),
           view==="analisis-bulanan"&&React.createElement(AnalisisBulananView,{expenses:expenses,income:income,allMonths:months}),
           view==="analisis-tahunan"&&React.createElement(AnalisisTahunanView,{expenses:expenses,income:income,allMonths:months})
         )
       )
     ),
-    React.createElement(ExpenseForm,{open:showExpForm,onClose:function(){setSEF(false);setEditExp(null);},onSave:saveExpense,activeYear:aY,activeMonth:aMI,initial:editingExp,showToast:tk.show}),
-    React.createElement(IncomeForm,{open:showIncForm,onClose:function(){setSIF(false);setEditInc(null);},onSave:saveIncome,activeYear:aY,activeMonth:aMI,initial:editingInc,showToast:tk.show}),
-    React.createElement(AddMonthModal,{open:showAddMonth,onClose:function(){setSAM(false);},onAdd:addMonth,existingKeys:months.map(function(m){return m.key;}),showToast:tk.show}),
+    React.createElement(ExpenseForm,{open:showExpForm,onClose:function(){setSEF(false);setEditExp(null);},onSave:saveExpense,activeYear:activeYear,activeMonth:0,initial:editingExp,showToast:tk.show}),
+    React.createElement(IncomeForm,{open:showIncForm,onClose:function(){setSIF(false);setEditInc(null);},onSave:saveIncome,activeYear:activeYear,activeMonth:0,initial:editingInc,showToast:tk.show}),
     React.createElement(ConfirmModal,{open:!!deleteTarget,message:"Yakin ingin menghapus transaksi ini? Data tidak bisa dikembalikan.",onConfirm:confirmDelete,onCancel:function(){setDT(null);}}),
     React.createElement(NameOnboardingModal,{open:user&&(!user.name||!user.name.trim()),onSave:function(u){setUser(u);tk.show("Nama akun berhasil disimpan!");}}),
     React.createElement(Toast,{toast:tk.toast})
