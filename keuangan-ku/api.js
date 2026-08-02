@@ -93,8 +93,11 @@
 
     login: async function (usernameOrEmail, password) {
       var input = (usernameOrEmail || "").trim().toLowerCase();
-      var email = input.indexOf("@") >= 0 ? input : toEmail(input);
-      var res = await sb.auth.signInWithPassword({ email: email, password: password });
+      var res = await sb.auth.signInWithPassword({ email: input, password: password });
+      if (res.error && input.indexOf("@") < 0) {
+        var altRes = await sb.auth.signInWithPassword({ email: toEmail(input), password: password });
+        if (!altRes.error) res = altRes;
+      }
       if (res.error) throw new Error(mapError(res.error));
       var user = res.data.user;
       var meta = user.user_metadata || {};
