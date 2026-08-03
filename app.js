@@ -1120,6 +1120,14 @@ function App() {
     });
   }, []);
 
+  // Force document body background to match theme tokens directly in DOM
+  useEffect(function () {
+    if (typeof document !== "undefined" && document.body) {
+      document.body.style.background = T.bg;
+      document.body.style.color = T.text;
+    }
+  }, []);
+
   useEffect(function () {
     if (!user) { setLoading(false); return; }
     setLoading(true);
