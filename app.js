@@ -6,29 +6,31 @@ var useState = React.useState;
 var useEffect = React.useEffect;
 var useCallback = React.useCallback;
 
-// ── Theme Design Tokens (Modern Midnight Slate — Soft & Eye-Pleasing) ─────────
+// ── Theme Design Tokens (Clean White & Dark Grey Hybrid Minimalist) ─────────
 var T = {
-  bg: "#0F172A",
-  surface: "#1E293B",
-  card: "#1E293B",
-  panel: "#334155",
-  border: "#334155",
-  sidebar: "#0F172A",
-  teal: "#34D399",
-  tealDim: "rgba(52, 211, 153, 0.16)",
+  bg: "#F8FAFC",
+  surface: "#FFFFFF",
+  card: "#FFFFFF",
+  panel: "#F1F5F9",
+  border: "#E2E8F0",
+  sidebar: "#1E293B",
+  sidebarText: "#F8FAFC",
+  sidebarSub: "#94A3B8",
+  teal: "#059669",
+  tealDim: "rgba(5, 150, 105, 0.12)",
   sage: "#10B981",
-  sageDim: "rgba(16, 185, 129, 0.16)",
-  coral: "#F43F5E",
-  coralDim: "rgba(244, 63, 94, 0.16)",
-  amber: "#F59E0B",
-  amberDim: "rgba(245, 158, 11, 0.16)",
-  sky: "#38BDF8",
-  skyDim: "rgba(56, 189, 248, 0.16)",
-  violet: "#A855F7",
-  violetDim: "rgba(168, 85, 247, 0.16)",
-  text: "#F8FAFC",
-  textSub: "#94A3B8",
-  textDim: "#64748B",
+  sageDim: "rgba(16, 185, 129, 0.12)",
+  coral: "#E11D48",
+  coralDim: "rgba(225, 29, 72, 0.12)",
+  amber: "#D97706",
+  amberDim: "rgba(217, 119, 6, 0.12)",
+  sky: "#0284C7",
+  skyDim: "rgba(2, 132, 199, 0.12)",
+  violet: "#9333EA",
+  violetDim: "rgba(147, 51, 234, 0.12)",
+  text: "#0F172A",
+  textSub: "#64748B",
+  textDim: "#94A3B8",
 };
 
 // ── Categories configuration ──────────────────────────────────────────────────
@@ -1053,7 +1055,7 @@ function Sidebar(p) {
           "div",
           null,
           React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: T.teal, letterSpacing: -0.5 } }, "Keuangan"),
-          React.createElement("div", { style: { fontSize: 9, color: T.textSub, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase" } }, "PERSONAL FINANCE")
+          React.createElement("div", { style: { fontSize: 9, color: T.sidebarSub, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase" } }, "PERSONAL FINANCE")
         )
       ),
       React.createElement("button", { onClick: p.onLogout, title: "Logout", style: { background: T.coralDim, border: "1px solid " + T.coral + "55", color: T.coral, padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", gap: 4 } }, "🚪 Keluar")
@@ -1061,7 +1063,7 @@ function Sidebar(p) {
     React.createElement(
       "div",
       { className: "sidebar-menu-list", style: { padding: "12px 8px 6px", flex: 1, overflowY: "auto" } },
-      React.createElement("div", { style: { fontSize: 10, color: T.textDim, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", padding: "0 10px", marginBottom: 8 } }, "MENU"),
+      React.createElement("div", { style: { fontSize: 10, color: T.sidebarSub, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", padding: "0 10px", marginBottom: 8 } }, "MENU"),
       nav.map(function (item) {
         var active = p.view === item.id;
         return React.createElement(
@@ -1072,7 +1074,7 @@ function Sidebar(p) {
             style: {
               width: "100%", padding: "10px 14px", borderRadius: 10, marginBottom: 4, border: active ? "1px solid " + T.teal + "55" : "none",
               background: active ? T.tealDim : "transparent",
-              color: active ? T.teal : T.textSub, fontSize: 13, fontWeight: 700, cursor: "pointer",
+              color: active ? T.teal : T.sidebarSub, fontSize: 13, fontWeight: 700, cursor: "pointer",
               display: "flex", alignItems: "center", gap: 12, textAlign: "left",
               transition: "all .12s ease",
             },
@@ -1084,7 +1086,7 @@ function Sidebar(p) {
     React.createElement(
       "div",
       { style: { padding: "12px 14px", borderTop: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between" } },
-      React.createElement("div", null, React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: T.text } }, p.user.name), React.createElement("div", { style: { fontSize: 10, color: T.textDim } }, "@" + (p.user.username || "user"))),
+      React.createElement("div", null, React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: T.sidebarText } }, p.user.name), React.createElement("div", { style: { fontSize: 10, color: T.sidebarSub } }, "@" + (p.user.username || "user"))),
       React.createElement("button", { onClick: p.onLogout, title: "Logout", style: { background: T.coralDim, border: "1px solid " + T.coral + "55", color: T.coral, padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 800 } }, "Keluar")
     )
   );
