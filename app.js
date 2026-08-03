@@ -6,30 +6,30 @@ var useState = React.useState;
 var useEffect = React.useEffect;
 var useCallback = React.useCallback;
 
-// ── Theme Design Tokens (Clean White & Dark Grey Hybrid Minimalist) ─────────
+// ── Theme Design Tokens (Exact Match to User Reference Screenshot) ─────────
 var T = {
-  bg: "#F8FAFC",
+  bg: "#F1F5F9",
   surface: "#FFFFFF",
   card: "#FFFFFF",
-  panel: "#F1F5F9",
+  panel: "#F8FAFC",
   border: "#E2E8F0",
-  sidebar: "#1E293B",
-  sidebarText: "#F8FAFC",
-  sidebarSub: "#94A3B8",
-  teal: "#059669",
-  tealDim: "rgba(5, 150, 105, 0.12)",
-  sage: "#10B981",
-  sageDim: "rgba(16, 185, 129, 0.12)",
+  sidebar: "#FFFFFF",
+  sidebarText: "#475569",
+  sidebarSub: "#64748B",
+  teal: "#2563EB",
+  tealDim: "#2563EB",
+  sage: "#059669",
+  sageDim: "rgba(5, 150, 105, 0.12)",
   coral: "#E11D48",
   coralDim: "rgba(225, 29, 72, 0.12)",
   amber: "#D97706",
   amberDim: "rgba(217, 119, 6, 0.12)",
-  sky: "#0284C7",
-  skyDim: "rgba(2, 132, 199, 0.12)",
-  violet: "#9333EA",
-  violetDim: "rgba(147, 51, 234, 0.12)",
+  sky: "#2563EB",
+  skyDim: "rgba(37, 99, 235, 0.12)",
+  violet: "#7C3AED",
+  violetDim: "rgba(124, 58, 237, 0.12)",
   text: "#0F172A",
-  textSub: "#64748B",
+  textSub: "#475569",
   textDim: "#94A3B8",
 };
 
@@ -1043,10 +1043,10 @@ function Sidebar(p) {
 
   return React.createElement(
     "div",
-    { className: "sidebar-root", style: { width: 224, background: T.sidebar, borderRight: "1px solid " + T.border, display: "flex", flexDirection: "column", flexShrink: 0, userSelect: "none" } },
+    { className: "sidebar-root", style: { width: 224, background: "#FFFFFF", borderRight: "1px solid #E2E8F0", display: "flex", flexDirection: "column", flexShrink: 0, userSelect: "none" } },
     React.createElement(
       "div",
-      { style: { padding: "16px 18px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between" } },
+      { style: { padding: "16px 18px", borderBottom: "1px solid #E2E8F0", display: "flex", alignItems: "center", justifyContent: "space-between" } },
       React.createElement(
         "div",
         { style: { display: "flex", alignItems: "center", gap: 10 } },
@@ -1054,16 +1054,16 @@ function Sidebar(p) {
         React.createElement(
           "div",
           null,
-          React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: T.teal, letterSpacing: -0.5 } }, "Keuangan"),
-          React.createElement("div", { style: { fontSize: 9, color: T.sidebarSub, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase" } }, "PERSONAL FINANCE")
+          React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: "#2563EB", letterSpacing: -0.5 } }, "Keuangan"),
+          React.createElement("div", { style: { fontSize: 9, color: "#64748B", fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase" } }, "PERSONAL FINANCE")
         )
       ),
-      React.createElement("button", { onClick: p.onLogout, title: "Logout", style: { background: T.coralDim, border: "1px solid " + T.coral + "55", color: T.coral, padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", gap: 4 } }, "🚪 Keluar")
+      React.createElement("button", { onClick: p.onLogout, title: "Logout", style: { background: "#FFE4E6", border: "1px solid #FDA4AF", color: "#E11D48", padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", gap: 4 } }, "🚪 Keluar")
     ),
     React.createElement(
       "div",
       { className: "sidebar-menu-list", style: { padding: "12px 8px 6px", flex: 1, overflowY: "auto" } },
-      React.createElement("div", { style: { fontSize: 10, color: T.sidebarSub, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", padding: "0 10px", marginBottom: 8 } }, "MENU"),
+      React.createElement("div", { style: { fontSize: 10, color: "#94A3B8", fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", padding: "0 10px", marginBottom: 8 } }, "MENU"),
       nav.map(function (item) {
         var active = p.view === item.id;
         return React.createElement(
@@ -1072,10 +1072,11 @@ function Sidebar(p) {
             key: item.id,
             onClick: function () { p.onView(item.id); },
             style: {
-              width: "100%", padding: "10px 14px", borderRadius: 10, marginBottom: 4, border: active ? "1px solid " + T.teal + "55" : "none",
-              background: active ? T.tealDim : "transparent",
-              color: active ? T.teal : T.sidebarSub, fontSize: 13, fontWeight: 700, cursor: "pointer",
+              width: "100%", padding: "10px 14px", borderRadius: 10, marginBottom: 4, border: "none",
+              background: active ? "#2563EB" : "transparent",
+              color: active ? "#FFFFFF" : "#475569", fontSize: 13, fontWeight: active ? 800 : 600, cursor: "pointer",
               display: "flex", alignItems: "center", gap: 12, textAlign: "left",
+              boxShadow: active ? "0 4px 12px rgba(37, 99, 235, 0.3)" : "none",
               transition: "all .12s ease",
             },
           },
@@ -1085,9 +1086,9 @@ function Sidebar(p) {
     ),
     React.createElement(
       "div",
-      { style: { padding: "12px 14px", borderTop: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between" } },
-      React.createElement("div", null, React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: T.sidebarText } }, p.user.name), React.createElement("div", { style: { fontSize: 10, color: T.sidebarSub } }, "@" + (p.user.username || "user"))),
-      React.createElement("button", { onClick: p.onLogout, title: "Logout", style: { background: T.coralDim, border: "1px solid " + T.coral + "55", color: T.coral, padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 800 } }, "Keluar")
+      { style: { padding: "12px 14px", borderTop: "1px solid #E2E8F0", display: "flex", alignItems: "center", justifyContent: "space-between" } },
+      React.createElement("div", null, React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: "#0F172A" } }, p.user.name), React.createElement("div", { style: { fontSize: 10, color: "#64748B" } }, "@" + (p.user.username || "user"))),
+      React.createElement("button", { onClick: p.onLogout, title: "Logout", style: { background: "#FFE4E6", border: "1px solid #FDA4AF", color: "#E11D48", padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 800 } }, "Keluar")
     )
   );
 }
