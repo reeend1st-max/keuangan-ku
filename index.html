@@ -94,18 +94,23 @@ window.addEventListener("error", function(e) {
 });
 </script>
 
-<!-- Vendored libraries -->
-<script src="/vendor/react.production.min.js"></script>
-<script src="/vendor/react-dom.production.min.js"></script>
-<script src="/vendor/supabase.js"></script>
+<!-- Vendored & CDN libraries (React 18, ReactDOM 18, Supabase JS) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+if (!window.React) document.write('<script src="/vendor/react.production.min.js"><\/script>');
+if (!window.ReactDOM) document.write('<script src="/vendor/react-dom.production.min.js"><\/script>');
+if (!window.supabase) document.write('<script src="/vendor/supabase.js"><\/script>');
+</script>
 
 <!-- Runtime config -->
-<script src="/config.js?v=20260803_ULTRA_WHITE_FIX_V100"></script>
+<script src="/config.js?v=20260803_REACT_CDN_FIX"></script>
 
 <!-- Supabase-backed data layer -->
-<script src="/js/api.js?v=20260803_ULTRA_WHITE_FIX_V100"></script>
+<script src="/js/api.js?v=20260803_REACT_CDN_FIX"></script>
 <!-- Main application -->
-<script src="/js/app.js?v=20260803_ULTRA_WHITE_FIX_V100"></script>
+<script src="/js/app.js?v=20260803_REACT_CDN_FIX"></script>
 
 <script>
 try {
