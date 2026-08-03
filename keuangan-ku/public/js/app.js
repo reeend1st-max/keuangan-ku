@@ -1244,4 +1244,5 @@ function App() {
   );
 }
 
-// Render root is handled cleanly by index.html
+// Expose App to global scope so index.html mountApp() can render it
+window.App = App;
