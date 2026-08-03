@@ -33,12 +33,12 @@ const filesToCopy = [
   { src: "style.css", dest: "css/style.css" },
   { src: "api.js", dest: "js/api.js" },
   { src: "app.js", dest: "js/app.js" },
-  { src: "react.production.min.js", dest: "vendor/react.production.min.js" },
-  { src: "react-dom.production.min.js", dest: "vendor/react-dom.production.min.js" },
-  { src: "supabase.js", dest: "vendor/supabase.js" },
-  { src: "favicon-32.png", dest: "assets/favicon-32.png" },
-  { src: "icon-192.png", dest: "assets/icon-192.png" },
-  { src: "icon-512.png", dest: "assets/icon-512.png" },
+  { src: "vendor/react.production.min.js", dest: "vendor/react.production.min.js" },
+  { src: "vendor/react-dom.production.min.js", dest: "vendor/react-dom.production.min.js" },
+  { src: "vendor/supabase.js", dest: "vendor/supabase.js" },
+  { src: "assets/favicon-32.png", dest: "assets/favicon-32.png" },
+  { src: "assets/icon-192.png", dest: "assets/icon-192.png" },
+  { src: "assets/icon-512.png", dest: "assets/icon-512.png" },
 ];
 
 filesToCopy.forEach(({ src, dest }) => {
@@ -46,6 +46,9 @@ filesToCopy.forEach(({ src, dest }) => {
   const destPath = path.join(publicDir, dest);
   if (fs.existsSync(srcPath)) {
     fs.copyFileSync(srcPath, destPath);
+    console.log(`Copied ${src} -> ${dest}`);
+  } else {
+    console.warn(`File not found: ${srcPath}`);
   }
 });
 
