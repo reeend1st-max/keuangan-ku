@@ -12,37 +12,27 @@
 <meta name="apple-mobile-web-app-title" content="Keuangan Ku"/>
 <title>Keuangan Ku 💰</title>
 
-<!-- Mobile Polyfill: Protect React DOM from Safari/Chrome Mobile auto-translate DOM mutations -->
 <script>
 if (typeof Node === "function" && Node.prototype) {
   var origRemove = Node.prototype.removeChild;
   Node.prototype.removeChild = function (child) {
-    if (child && child.parentNode !== this) {
-      if (window.console) console.warn("Prevented removeChild DOM mismatch:", child);
-      return child;
-    }
+    if (child && child.parentNode !== this) { return child; }
     return origRemove.apply(this, arguments);
   };
   var origInsert = Node.prototype.insertBefore;
   Node.prototype.insertBefore = function (newNode, refNode) {
-    if (refNode && refNode.parentNode !== this) {
-      if (window.console) console.warn("Prevented insertBefore DOM mismatch:", refNode);
-      return newNode;
-    }
+    if (refNode && refNode.parentNode !== this) { return newNode; }
     return origInsert.apply(this, arguments);
   };
 }
 </script>
 
 <link rel="manifest" href="/manifest.json"/>
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png"/>
-<link rel="apple-touch-icon" href="/assets/icon-192.png"/>
-<link rel="stylesheet" href="/css/style.css?v=20260803_DARK_RESTORE_V101"/>
+<link rel="stylesheet" href="/css/style.css?v=20260803_V102"/>
 </head>
 <body style="background:#0A0E17;margin:0;color:#F8FAFC;">
 <div id="root"></div>
 
-<!-- Core Libraries (CDN + Local Fallback) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -53,23 +43,25 @@ if (!window.ReactDOM) document.write('<script src="/vendor/react-dom.production.
 if (!window.supabase) document.write('<script src="/vendor/supabase.js"><\/script>');
 </script>
 
-<!-- Application Logic -->
-<script src="/config.js?v=20260803_DARK_RESTORE_V101"></script>
-<script src="/js/api.js?v=20260803_DARK_RESTORE_V101"></script>
-<script src="/js/app.js?v=20260803_DARK_RESTORE_V101"></script>
+<script src="/config.js?v=20260803_V102"></script>
+<script src="/js/api.js?v=20260803_V102"></script>
+<script src="/js/app.js?v=20260803_V102"></script>
 
 <script>
-(function mountApp() {
-  if (window.React && window.ReactDOM && window.App) {
+// Wait for everything to be ready then render
+(function tryRender(attempts) {
+  attempts = attempts || 0;
+  var root = document.getElementById("root");
+  if (window.React && window.ReactDOM && typeof App !== "undefined" && root) {
     try {
-      ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
-    } catch (e) {
-      console.error("Mount error:", e);
+      ReactDOM.createRoot(root).render(React.createElement(App));
+    } catch(e) {
+      console.error("Render error:", e);
     }
-  } else {
-    setTimeout(mountApp, 50);
+  } else if (attempts < 100) {
+    setTimeout(function() { tryRender(attempts + 1); }, 100);
   }
-})();
+})(0);
 </script>
 </body>
 </html>
