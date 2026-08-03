@@ -1,8 +1,8 @@
 // scripts/generate-config.js
 //
 // Runs during the Vercel build step. Reads SUPABASE_URL and SUPABASE_ANON_KEY from
-// the environment and writes them into public/config.js, ensuring all static assets
-// are cleanly synced into the public/ output directory.
+// the environment and writes them into public/config.js, as well as copying
+// all required static assets into the public/ directory.
 
 const fs = require("fs");
 const path = require("path");
@@ -25,7 +25,7 @@ dirsToCreate.forEach((dir) => {
   }
 });
 
-// Sync files between root and public structure
+// Always copy root source files to public build directory
 const filesToCopy = [
   { src: "index.html", dest: "index.html" },
   { src: "manifest.json", dest: "manifest.json" },
@@ -44,19 +44,8 @@ const filesToCopy = [
 filesToCopy.forEach(({ src, dest }) => {
   const srcPath = path.join(rootDir, src);
   const destPath = path.join(publicDir, dest);
-  
-  if (fs.existsSync(srcPath) && fs.existsSync(destPath)) {
-    const srcStat = fs.statSync(srcPath);
-    const destStat = fs.statSync(destPath);
-    if (destStat.mtimeMs > srcStat.mtimeMs) {
-      fs.copyFileSync(destPath, srcPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
-    }
-  } else if (fs.existsSync(srcPath)) {
+  if (fs.existsSync(srcPath)) {
     fs.copyFileSync(srcPath, destPath);
-  } else if (fs.existsSync(destPath)) {
-    fs.copyFileSync(destPath, srcPath);
   }
 });
 
@@ -72,4 +61,4 @@ const contents =
   ";\n";
 
 fs.writeFileSync(outPath, contents, "utf8");
-console.log("✅ Successfully synced build assets in public/ directory.");
+console.log("✅ Successfully generated public/config.js and copied static assets.");
