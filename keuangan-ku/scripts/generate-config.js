@@ -1,67 +1,57 @@
-// scripts/generate-config.js
-//
-// Runs during the Vercel build step. Reads SUPABASE_URL and SUPABASE_ANON_KEY from
-// the environment and writes them into public/config.js, as well as copying
-// all required static assets into the public/ directory.
-
 const fs = require("fs");
 const path = require("path");
 
-const rootDir = path.join(__dirname, "..");
+console.log("🚀 Generating runtime config.js and syncing public build assets...");
+
+// 1. Generate config.js
+const supabaseUrl = process.env.SUPABASE_URL || "https://nwrhhclyjuhrmcazigrr.supabase.co";
+const supabaseKey = process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmhoY2x5anVocm1jYXppZ3JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzNTA1MTgsImV4cCI6MjA1NTkyNjUxOH0.1NUpJzT2eA47_cndvAStJjYt9p48i9x2KIn1dDqg80Q";
+
+const configContent = `// Auto-generated runtime configuration
+window.ENV = {
+  SUPABASE_URL: "${supabaseUrl}",
+  SUPABASE_ANON_KEY: "${supabaseKey}"
+};
+`;
+
+const rootDir = path.resolve(__dirname, "..");
 const publicDir = path.join(rootDir, "public");
+const publicJsDir = path.join(publicDir, "js");
+const publicCssDir = path.join(publicDir, "css");
+const publicVendorDir = path.join(publicDir, "vendor");
 
-// Ensure public directories exist
-const dirsToCreate = [
-  publicDir,
-  path.join(publicDir, "css"),
-  path.join(publicDir, "js"),
-  path.join(publicDir, "vendor"),
-  path.join(publicDir, "assets"),
-];
-
-dirsToCreate.forEach((dir) => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+[publicDir, publicJsDir, publicCssDir, publicVendorDir].forEach((dir) => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-// Always copy root source files to public build directory
-const filesToCopy = [
-  { src: "index.html", dest: "index.html" },
-  { src: "manifest.json", dest: "manifest.json" },
-  { src: "sw.js", dest: "sw.js" },
-  { src: "style.css", dest: "css/style.css" },
-  { src: "api.js", dest: "js/api.js" },
-  { src: "app.js", dest: "js/app.js" },
-  { src: "vendor/react.production.min.js", dest: "vendor/react.production.min.js" },
-  { src: "vendor/react-dom.production.min.js", dest: "vendor/react-dom.production.min.js" },
-  { src: "vendor/supabase.js", dest: "vendor/supabase.js" },
-  { src: "assets/favicon-32.png", dest: "assets/favicon-32.png" },
-  { src: "assets/icon-192.png", dest: "assets/icon-192.png" },
-  { src: "assets/icon-512.png", dest: "assets/icon-512.png" },
-];
+fs.writeFileSync(path.join(rootDir, "config.js"), configContent);
+fs.writeFileSync(path.join(publicDir, "config.js"), configContent);
 
-filesToCopy.forEach(({ src, dest }) => {
-  const srcPath = path.join(rootDir, src);
-  const destPath = path.join(publicDir, dest);
-  if (fs.existsSync(srcPath)) {
-    fs.copyFileSync(srcPath, destPath);
-    console.log(`Copied ${src} -> ${dest}`);
-  } else {
-    console.warn(`File not found: ${srcPath}`);
+// Helper function to safely copy files if they exist
+function safeCopy(srcFile, destFile) {
+  if (fs.existsSync(srcFile)) {
+    fs.copyFileSync(srcFile, destFile);
+    console.log(`✅ Synced: ${path.relative(rootDir, destFile)}`);
   }
-});
+}
 
-const SUPABASE_URL = process.env.SUPABASE_URL || "";
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
+// 2. Sync all root files to public directory
+safeCopy(path.join(rootDir, "index.html"), path.join(publicDir, "index.html"));
+safeCopy(path.join(rootDir, "app.js"), path.join(publicJsDir, "app.js"));
+safeCopy(path.join(rootDir, "app.js"), path.join(publicDir, "app.js"));
+safeCopy(path.join(rootDir, "api.js"), path.join(publicJsDir, "api.js"));
+safeCopy(path.join(rootDir, "api.js"), path.join(publicDir, "api.js"));
+safeCopy(path.join(rootDir, "style.css"), path.join(publicCssDir, "style.css"));
+safeCopy(path.join(rootDir, "style.css"), path.join(publicDir, "style.css"));
+safeCopy(path.join(rootDir, "sw.js"), path.join(publicDir, "sw.js"));
+safeCopy(path.join(rootDir, "manifest.json"), path.join(publicDir, "manifest.json"));
 
-const outPath = path.join(publicDir, "config.js");
+// 3. Sync vendor directory if present
+const rootVendor = path.join(rootDir, "vendor");
+if (fs.existsSync(rootVendor)) {
+  fs.readdirSync(rootVendor).forEach((file) => {
+    safeCopy(path.join(rootVendor, file), path.join(publicVendorDir, file));
+  });
+}
 
-const contents =
-  "// AUTO-GENERATED at build time by scripts/generate-config.js — do not edit by hand.\n" +
-  "window.__SUPABASE_CONFIG__ = " +
-  JSON.stringify({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY }, null, 2) +
-  ";\n";
-
-fs.writeFileSync(outPath, contents, "utf8");
-console.log("✅ Successfully generated public/config.js and copied static assets.");
+console.log("🎉 Build sync completed successfully!");
