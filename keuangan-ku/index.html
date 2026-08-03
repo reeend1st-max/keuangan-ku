@@ -4,13 +4,33 @@
 <meta charset="UTF-8"/>
 <meta name="google" content="notranslate"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<meta name="theme-color" content="#0A0E17"/>
+<meta name="theme-color" content="#F8FAFC"/>
 <meta name="description" content="Keuangan Ku — Personal Finance Tracker"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Keuangan Ku"/>
 <title>Keuangan Ku 💰</title>
+
+<!-- Auto Cache-Buster: Wipe old PWA ServiceWorker caches when theme changes -->
+<script>
+(function() {
+  var vKey = "v20260803_ULTRA_WHITE_FIX";
+  if (localStorage.getItem("app_cache_key") !== vKey) {
+    localStorage.setItem("app_cache_key", vKey);
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        for (var i = 0; i < regs.length; i++) { regs[i].unregister(); }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        for (var i = 0; i < names.length; i++) { caches.delete(names[i]); }
+      });
+    }
+  }
+})();
+</script>
 
 <!-- Mobile Polyfill: Protect React DOM from Safari/Chrome Mobile auto-translate DOM mutations -->
 <script>
@@ -37,9 +57,9 @@ if (typeof Node === "function" && Node.prototype) {
 <link rel="manifest" href="/manifest.json"/>
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png"/>
 <link rel="apple-touch-icon" href="/assets/icon-192.png"/>
-<link rel="stylesheet" href="/css/style.css?v=20260802b"/>
+<link rel="stylesheet" href="/css/style.css?v=20260803_ULTRA_WHITE_FIX"/>
 </head>
-<body style="background:#0A0E17;margin:0;">
+<body style="background:#F8FAFC;margin:0;color:#0F172A;">
 <div id="root"></div>
 <div id="boot-error">
   <h2>⚠️ Memperbarui Aplikasi...</h2>
@@ -80,12 +100,12 @@ window.addEventListener("error", function(e) {
 <script src="/vendor/supabase.js"></script>
 
 <!-- Runtime config -->
-<script src="/config.js?v=20260802_FINAL"></script>
+<script src="/config.js?v=20260803_ULTRA_WHITE_FIX_V100"></script>
 
 <!-- Supabase-backed data layer -->
-<script src="/js/api.js?v=20260802_FINAL"></script>
+<script src="/js/api.js?v=20260803_ULTRA_WHITE_FIX_V100"></script>
 <!-- Main application -->
-<script src="/js/app.js?v=20260802_FINAL"></script>
+<script src="/js/app.js?v=20260803_ULTRA_WHITE_FIX_V100"></script>
 
 <script>
 try {
@@ -103,7 +123,18 @@ try {
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js?v=20260802b').catch(function() {});
+    navigator.serviceWorker.register('/sw.js?v=20260803_ULTRA_WHITE_FIX_V100').then(function(reg) {
+      reg.onupdatefound = function() {
+        var installingWorker = reg.installing;
+        if (installingWorker) {
+          installingWorker.onstatechange = function() {
+            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              window.location.reload(true);
+            }
+          };
+        }
+      };
+    }).catch(function() {});
   });
 }
 </script>
