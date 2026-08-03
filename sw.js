@@ -1,14 +1,14 @@
-const CACHE_NAME = "keuanganku-v20260803_ULTRA_WHITE_FIX_V100";
+const CACHE_NAME = "keuanganku-v20260803_RELATIVE_PATHS_V100";
 const STATIC_ASSETS = [
-  "/",
-  "/index.html",
-  "/css/style.css",
-  "/js/api.js",
-  "/js/app.js",
-  "/vendor/react.production.min.js",
-  "/vendor/react-dom.production.min.js",
-  "/vendor/supabase.js",
-  "/manifest.json",
+  "./",
+  "./index.html",
+  "./css/style.css",
+  "./js/api.js",
+  "./js/app.js",
+  "./vendor/react.production.min.js",
+  "./vendor/react-dom.production.min.js",
+  "./vendor/supabase.js",
+  "./manifest.json",
 ];
 
 self.addEventListener("install", function (e) {
@@ -33,11 +33,9 @@ self.addEventListener("activate", function (e) {
 });
 
 self.addEventListener("fetch", function (e) {
-  // Never cache Supabase API calls or config.js (must always be fresh/live).
   if (e.request.url.indexOf("supabase.co") !== -1) return;
-  if (e.request.url.indexOf("/config.js") !== -1) return;
+  if (e.request.url.indexOf("config.js") !== -1) return;
 
-  // Network-first strategy: Always fetch fresh code from network, fallback to cache if offline.
   e.respondWith(
     fetch(e.request)
       .then(function (res) {
