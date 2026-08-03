@@ -7,20 +7,16 @@
 
 (function () {
   function getConfig() {
-    return window.__SUPABASE_CONFIG__ || {};
+    var c = window.__SUPABASE_CONFIG__ || {};
+    var env = window.ENV || {};
+    var url = c.url || env.SUPABASE_URL || "https://nwrhhclyjuhrmcazigrr.supabase.co";
+    var anonKey = c.anonKey || env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmhoY2x5anVocm1jYXppZ3JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzNTA1MTgsImV4cCI6MjA1NTkyNjUxOH0.1NUpJzT2eA47_cndvAStJjYt9p48i9x2KIn1dDqg80Q";
+    return { url: url, anonKey: anonKey };
   }
 
   var cfg = getConfig();
 
-  if (!cfg.url || !cfg.anonKey) {
-    console.error(
-      "[Keuangan Ku] Supabase belum dikonfigurasi. " +
-      "Pastikan environment variables SUPABASE_URL dan SUPABASE_ANON_KEY " +
-      "sudah diisi di Vercel, lalu deploy ulang."
-    );
-  }
-
-  var sb = window.supabase.createClient(cfg.url || "", cfg.anonKey || "", {
+  var sb = window.supabase.createClient(cfg.url, cfg.anonKey, {
     auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
   });
 
