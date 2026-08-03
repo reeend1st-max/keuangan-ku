@@ -6,29 +6,29 @@ var useState = React.useState;
 var useEffect = React.useEffect;
 var useCallback = React.useCallback;
 
-// ── Theme Design Tokens ───────────────────────────────────────────────────────
+// ── Theme Design Tokens (Modern Midnight Slate — Soft & Eye-Pleasing) ─────────
 var T = {
-  bg: "#080C14",
-  surface: "#0F1626",
-  card: "#141D30",
-  panel: "#1A253D",
-  border: "#223150",
-  sidebar: "#0B101C",
-  teal: "#00E5A3",
-  tealDim: "rgba(0, 229, 163, 0.14)",
+  bg: "#0F172A",
+  surface: "#1E293B",
+  card: "#1E293B",
+  panel: "#334155",
+  border: "#334155",
+  sidebar: "#0F172A",
+  teal: "#34D399",
+  tealDim: "rgba(52, 211, 153, 0.16)",
   sage: "#10B981",
-  sageDim: "rgba(16, 185, 129, 0.14)",
-  coral: "#FF5C7C",
-  coralDim: "rgba(255, 92, 124, 0.14)",
+  sageDim: "rgba(16, 185, 129, 0.16)",
+  coral: "#F43F5E",
+  coralDim: "rgba(244, 63, 94, 0.16)",
   amber: "#F59E0B",
-  amberDim: "rgba(245, 158, 11, 0.14)",
-  sky: "#3B82F6",
-  skyDim: "rgba(59, 130, 246, 0.14)",
-  violet: "#8B5CF6",
-  violetDim: "rgba(139, 92, 246, 0.14)",
-  text: "#F3F4F6",
-  textSub: "#9CA3AF",
-  textDim: "#6B7280",
+  amberDim: "rgba(245, 158, 11, 0.16)",
+  sky: "#38BDF8",
+  skyDim: "rgba(56, 189, 248, 0.16)",
+  violet: "#A855F7",
+  violetDim: "rgba(168, 85, 247, 0.16)",
+  text: "#F8FAFC",
+  textSub: "#94A3B8",
+  textDim: "#64748B",
 };
 
 // ── Categories configuration ──────────────────────────────────────────────────
