@@ -12,42 +12,6 @@
 <meta name="apple-mobile-web-app-title" content="Keuangan Ku"/>
 <title>Keuangan Ku 💰</title>
 
-<!-- Immediate PWA & ServiceWorker Cache Cleaner -->
-<script>
-(function() {
-  var vKey = "v20260803_FORCE_CDN_REBOOT_V99";
-  if (localStorage.getItem("app_cache_key") !== vKey) {
-    localStorage.setItem("app_cache_key", vKey);
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(regs) {
-        for (var i = 0; i < regs.length; i++) { regs[i].unregister(); }
-      });
-    }
-    if ('caches' in window) {
-      caches.keys().then(function(names) {
-        for (var i = 0; i < names.length; i++) { caches.delete(names[i]); }
-      });
-    }
-  }
-})();
-
-function forceResetApp() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(regs) {
-      for (var i = 0; i < regs.length; i++) { regs[i].unregister(); }
-    });
-  }
-  if ('caches' in window) {
-    caches.keys().then(function(names) {
-      for (var i = 0; i < names.length; i++) { caches.delete(names[i]); }
-    });
-  }
-  localStorage.clear();
-  sessionStorage.clear();
-  window.location.reload(true);
-}
-</script>
-
 <!-- Mobile Polyfill: Protect React DOM from Safari/Chrome Mobile auto-translate DOM mutations -->
 <script>
 if (typeof Node === "function" && Node.prototype) {
@@ -73,20 +37,12 @@ if (typeof Node === "function" && Node.prototype) {
 <link rel="manifest" href="/manifest.json"/>
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png"/>
 <link rel="apple-touch-icon" href="/assets/icon-192.png"/>
-<link rel="stylesheet" href="/css/style.css?v=20260803_FORCE_CDN_REBOOT_V99"/>
+<link rel="stylesheet" href="/css/style.css?v=20260803_PERFECT_STABLE_V100"/>
 </head>
 <body style="background:#F1F5F9;margin:0;color:#0F172A;">
 <div id="root"></div>
-<div id="boot-error" style="background:#F1F5F9;color:#0F172A;">
-  <h2 style="color:#059669;">🔄 Memperbarui Tampilan Aplikasi...</h2>
-  <p>Versi terbaru tema Putih & Dark Grey sedang dimuat. Silakan klik tombol di bawah ini:</p>
-  <button onclick="forceResetApp()" style="background:#059669;color:#FFFFFF;border:none;padding:12px 24px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;margin-top:10px;box-shadow:0 4px 12px rgba(5,150,105,0.3);">
-    🔄 Muat Ulang Versi Terbaru (Bersihkan Cache)
-  </button>
-  <pre id="boot-error-detail" style="margin-top:16px;font-size:11px;opacity:0.7;"></pre>
-</div>
 
-<!-- Vendored & High-Speed CDN libraries (React 18, ReactDOM 18, Supabase JS) -->
+<!-- Core Libraries (CDN + Local Fallback) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -97,30 +53,23 @@ if (!window.ReactDOM) document.write('<script src="/vendor/react-dom.production.
 if (!window.supabase) document.write('<script src="/vendor/supabase.js"><\/script>');
 </script>
 
-<!-- Runtime config -->
-<script src="/config.js?v=20260803_FORCE_CDN_REBOOT_V99"></script>
-
-<!-- Supabase-backed data layer -->
-<script src="/js/api.js?v=20260803_FORCE_CDN_REBOOT_V99"></script>
-<!-- Main application -->
-<script src="/js/app.js?v=20260803_FORCE_CDN_REBOOT_V99"></script>
+<!-- Application Logic -->
+<script src="/config.js?v=20260803_PERFECT_STABLE_V100"></script>
+<script src="/js/api.js?v=20260803_PERFECT_STABLE_V100"></script>
+<script src="/js/app.js?v=20260803_PERFECT_STABLE_V100"></script>
 
 <script>
-function bootApp(retries) {
-  retries = retries || 0;
-  if (window.React && window.ReactDOM && window.supabase && window.Api && window.App) {
-    var b = document.getElementById("boot-error");
-    if (b) b.classList.remove("show");
-    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
-  } else if (retries < 30) {
-    setTimeout(function() { bootApp(retries + 1); }, 100);
+(function mountApp() {
+  if (window.React && window.ReactDOM && window.App) {
+    try {
+      ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+    } catch (e) {
+      console.error("Mount error:", e);
+    }
   } else {
-    var b = document.getElementById("boot-error"), d = document.getElementById("boot-error-detail");
-    if (d) d.textContent = "React/App sedang dimuat ulang dari CDN. Mengatur ulang...";
-    if (b) b.classList.add("show");
+    setTimeout(mountApp, 50);
   }
-}
-bootApp(0);
+})();
 </script>
 </body>
 </html>
