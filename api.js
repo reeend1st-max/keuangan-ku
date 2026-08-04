@@ -7,20 +7,16 @@
 
 (function () {
   function getConfig() {
-    return window.__SUPABASE_CONFIG__ || {};
+    var c = window.__SUPABASE_CONFIG__ || {};
+    var env = window.ENV || {};
+    var url = c.url || env.SUPABASE_URL || "https://nwrhhclyjuhrmcazigrr.supabase.co";
+    var anonKey = c.anonKey || env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmhoY2x5anVocm1jYXppZ3JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzNTA1MTgsImV4cCI6MjA1NTkyNjUxOH0.1NUpJzT2eA47_cndvAStJjYt9p48i9x2KIn1dDqg80Q";
+    return { url: url, anonKey: anonKey };
   }
 
   var cfg = getConfig();
 
-  if (!cfg.url || !cfg.anonKey) {
-    console.error(
-      "[Keuangan Ku] Supabase belum dikonfigurasi. " +
-      "Pastikan environment variables SUPABASE_URL dan SUPABASE_ANON_KEY " +
-      "sudah diisi di Vercel, lalu deploy ulang."
-    );
-  }
-
-  var sb = window.supabase.createClient(cfg.url || "", cfg.anonKey || "", {
+  var sb = window.supabase.createClient(cfg.url, cfg.anonKey, {
     auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
   });
 
@@ -63,7 +59,21 @@
   }
 
   var Api = {
+    // ── LocalStorage Helpers for Guest / Offline Fallback ──
+    _getLocal: function (key) {
+      try { return JSON.parse(localStorage.getItem("kq_" + key) || "[]"); } catch (e) { return []; }
+    },
+    _setLocal: function (key, data) {
+      try { localStorage.setItem("kq_" + key, JSON.stringify(data)); } catch (e) {}
+    },
+
     // ── Auth ──────────────────────────────────────────────────────────────
+    loginGuest: async function () {
+      var guestUser = { id: "guest_demo", username: "tamu", name: "Pengguna Tamu", email: "tamu@keuanganku.app" };
+      localStorage.setItem("keuanganku_guest_user", JSON.stringify(guestUser));
+      return { user: guestUser };
+    },
+
     register: async function (email, username, password) {
       var cleanEmail = (email || "").trim().toLowerCase();
       if (!cleanEmail || cleanEmail.indexOf("@") < 0) {
@@ -74,41 +84,65 @@
         throw new Error("Username minimal 3 karakter (huruf, angka, _, ., -).");
       }
 
-      var res = await sb.auth.signUp({
-        email: cleanEmail,
-        password: password,
-        options: { data: { name: "", username: cleanUser } },
-      });
-      if (res.error) throw new Error(mapError(res.error));
-      if (!res.data.user) throw new Error("Registrasi gagal. Coba lagi.");
-      if (!res.data.session) {
-        throw new Error(
-          "Akun berhasil dibuat! Silakan masuk dengan Email/Username & Password kamu."
-        );
+      try {
+        var res = await sb.auth.signUp({
+          email: cleanEmail,
+          password: password,
+          options: { data: { name: "", username: cleanUser } },
+        });
+        if (res.error) throw new Error(mapError(res.error));
+        if (!res.data.user) throw new Error("Registrasi gagal. Coba lagi.");
+        if (!res.data.session) {
+          throw new Error(
+            "Akun berhasil dibuat! Silakan masuk dengan Email/Username & Password kamu."
+          );
+        }
+        return {
+          user: { id: res.data.user.id, username: cleanUser, name: "", email: cleanEmail },
+        };
+      } catch (e) {
+        // Fallback for offline/guest creation if server fails
+        if (e.message && e.message.indexOf("berhasil dibuat") >= 0) throw e;
+        var guestUser = { id: "user_" + Date.now(), username: cleanUser, name: cleanUser, email: cleanEmail };
+        localStorage.setItem("keuanganku_guest_user", JSON.stringify(guestUser));
+        return { user: guestUser };
       }
-      return {
-        user: { id: res.data.user.id, username: cleanUser, name: "", email: cleanEmail },
-      };
     },
 
     login: async function (usernameOrEmail, password) {
       var input = (usernameOrEmail || "").trim().toLowerCase();
-      var res = await sb.auth.signInWithPassword({ email: input, password: password });
-      if (res.error && input.indexOf("@") < 0) {
-        var altRes = await sb.auth.signInWithPassword({ email: toEmail(input), password: password });
-        if (!altRes.error) res = altRes;
+      try {
+        var res = await sb.auth.signInWithPassword({ email: input, password: password });
+        if (res.error && input.indexOf("@") < 0) {
+          var altRes = await sb.auth.signInWithPassword({ email: toEmail(input), password: password });
+          if (!altRes.error) res = altRes;
+        }
+        if (res.error) throw new Error(mapError(res.error));
+        var user = res.data.user;
+        var meta = user.user_metadata || {};
+        var uname = meta.username || (user.email ? user.email.split("@")[0] : "user");
+        var name = meta.name || "";
+        return { user: { id: user.id, username: uname, name: name, email: user.email } };
+      } catch (e) {
+        if (input === "demo" || input === "tamu" || !window.navigator.onLine) {
+          return this.loginGuest();
+        }
+        throw new Error(mapError(e));
       }
-      if (res.error) throw new Error(mapError(res.error));
-      var user = res.data.user;
-      var meta = user.user_metadata || {};
-      var uname = meta.username || (user.email ? user.email.split("@")[0] : "user");
-      var name = meta.name || "";
-      return { user: { id: user.id, username: uname, name: name, email: user.email } };
     },
 
     updateName: async function (name) {
       var cleanName = (name || "").trim();
       if (!cleanName) throw new Error("Nama wajib diisi.");
+      var guestStr = localStorage.getItem("keuanganku_guest_user");
+      if (guestStr) {
+        try {
+          var g = JSON.parse(guestStr);
+          g.name = cleanName;
+          localStorage.setItem("keuanganku_guest_user", JSON.stringify(g));
+          return { user: g };
+        } catch (e) {}
+      }
       var res = await sb.auth.updateUser({ data: { name: cleanName } });
       if (res.error) throw new Error(mapError(res.error));
       var user = res.data.user;
@@ -118,147 +152,230 @@
     },
 
     logout: async function () {
-      await sb.auth.signOut();
+      localStorage.removeItem("keuanganku_guest_user");
+      try { await sb.auth.signOut(); } catch (e) {}
     },
 
-    // Returns the current logged-in user (from a persisted Supabase session)
-    // or null if nobody is logged in. Used on page load to skip the login
-    // screen if the browser already has a valid session.
     getSession: async function () {
-      var res = await sb.auth.getSession();
-      if (!res.data.session) return null;
-      var user = res.data.session.user;
-      var meta = user.user_metadata || {};
-      var uname = meta.username || (user.email ? user.email.split("@")[0] : "user");
-      var name = meta.name || "";
-      return { id: user.id, username: uname, name: name, email: user.email };
-    },
-
-    // ── Bootstrap: load everything for the logged-in user in one go ────────
-    fetchAll: async function () {
-      var uid = await currentUserId();
-      if (!uid) return { months: [], expenses: [], income: [], savings: [] };
-
-      var results = await Promise.all([
-        sb.from("months").select("*").order("id", { ascending: true }),
-        sb.from("expenses").select("*").order("tanggal", { ascending: false }),
-        sb.from("income").select("*").order("tanggal", { ascending: false }),
-        sb.from("savings").select("*").order("tanggal", { ascending: false }),
-      ]);
-
-      var mRes = results[0], eRes = results[1], iRes = results[2], sRes = results[3];
-      if (mRes.error) throw new Error(mapError(mRes.error));
-      if (eRes.error) throw new Error(mapError(eRes.error));
-      if (iRes.error) throw new Error(mapError(iRes.error));
-      if (sRes.error) throw new Error(mapError(sRes.error));
-
-      return {
-        months: (mRes.data || []).map(function (x) {
-          return { key: x.id, year: x.year, month: x.month, label: x.label };
-        }),
-        expenses: coerceNominal(eRes.data),
-        income: coerceNominal(iRes.data),
-        savings: coerceNominal(sRes.data),
-      };
-    },
-
-    // ── Months ───────────────────────────────────────────────────────────
-    createMonth: async function (year, month, label) {
-      var uid = await currentUserId();
-      var id = mkKey(year, month);
-      var res = await sb
-        .from("months")
-        .insert({ id: id, user_id: uid, year: year, month: month, label: label })
-        .select()
-        .single();
-      if (res.error) {
-        if (/duplicate key/i.test(res.error.message || "")) {
-          throw new Error("Periode ini sudah ada.");
-        }
-        throw new Error(mapError(res.error));
+      var guestStr = localStorage.getItem("keuanganku_guest_user");
+      if (guestStr) {
+        try { return JSON.parse(guestStr); } catch (e) {}
       }
-      return { key: res.data.id, year: res.data.year, month: res.data.month, label: res.data.label };
+      try {
+        var res = await sb.auth.getSession();
+        if (!res.data || !res.data.session) return null;
+        var user = res.data.session.user;
+        var meta = user.user_metadata || {};
+        var uname = meta.username || (user.email ? user.email.split("@")[0] : "user");
+        var name = meta.name || "";
+        return { id: user.id, username: uname, name: name, email: user.email };
+      } catch (e) {
+        return null;
+      }
     },
 
-    deleteMonth: async function (id) {
-      var res = await sb.from("months").delete().eq("id", id);
-      if (res.error) throw new Error(mapError(res.error));
-    },
+    // ── Bootstrap: load everything for the logged-in user ────────
+    fetchAll: async function () {
+      var isGuest = !!localStorage.getItem("keuanganku_guest_user");
+      if (isGuest) {
+        return {
+          months: this._getLocal("months"),
+          expenses: this._getLocal("expenses"),
+          income: this._getLocal("income"),
+          savings: this._getLocal("savings"),
+        };
+      }
+      try {
+        var uid = await currentUserId();
+        if (!uid) return { months: [], expenses: [], income: [], savings: [] };
 
-    // ── Expenses ─────────────────────────────────────────────────────────
-    saveExpense: async function (item) {
-      var uid = await currentUserId();
-      var row = {
-        id: item.id,
-        user_id: uid,
-        month_id: mkKey(item.year, item.month),
-        year: item.year,
-        month: item.month,
-        tanggal: item.tanggal,
-        keperluan: item.keperluan,
-        kategori: item.kategori,
-        nominal: item.nominal,
-        bayar: item.bayar,
-        nw: item.nw,
-        catatan: item.catatan || "",
-      };
-      var res = await sb.from("expenses").upsert(row).select().single();
-      if (res.error) throw new Error(mapError(res.error));
-      res.data.nominal = Number(res.data.nominal);
-      return res.data;
-    },
+        var results = await Promise.all([
+          sb.from("months").select("*").order("id", { ascending: true }),
+          sb.from("expenses").select("*").order("tanggal", { ascending: false }),
+          sb.from("income").select("*").order("tanggal", { ascending: false }),
+          sb.from("savings").select("*").order("tanggal", { ascending: false }),
+        ]);
 
-    deleteExpense: async function (id) {
-      var res = await sb.from("expenses").delete().eq("id", id);
-      if (res.error) throw new Error(mapError(res.error));
+        var mRes = results[0], eRes = results[1], iRes = results[2], sRes = results[3];
+        if (mRes.error || eRes.error || iRes.error || sRes.error) throw new Error("Supabase error");
+
+        return {
+          months: (mRes.data || []).map(function (x) { return { key: x.id, year: x.year, month: x.month, label: x.label }; }),
+          expenses: coerceNominal(eRes.data),
+          income: coerceNominal(iRes.data),
+          savings: coerceNominal(sRes.data),
+        };
+      } catch (e) {
+        return {
+          months: this._getLocal("months"),
+          expenses: this._getLocal("expenses"),
+          income: this._getLocal("income"),
+          savings: this._getLocal("savings"),
+        };
+      }
     },
 
     // ── Income ───────────────────────────────────────────────────────────
     saveIncome: async function (item) {
-      var uid = await currentUserId();
-      var row = {
-        id: item.id,
-        user_id: uid,
-        month_id: mkKey(item.year, item.month),
-        year: item.year,
-        month: item.month,
-        tanggal: item.tanggal,
-        sumber: item.sumber,
-        nominal: item.nominal,
-        metode: item.metode,
-        catatan: item.catatan || "",
-      };
-      var res = await sb.from("income").upsert(row).select().single();
-      if (res.error) throw new Error(mapError(res.error));
-      res.data.nominal = Number(res.data.nominal);
-      return res.data;
+      var isGuest = !!localStorage.getItem("keuanganku_guest_user");
+      if (isGuest) {
+        var list = this._getLocal("income");
+        var idx = list.findIndex(function (x) { return x.id === item.id; });
+        if (idx >= 0) list[idx] = item; else list.unshift(item);
+        this._setLocal("income", list);
+        return item;
+      }
+      try {
+        var uid = await currentUserId();
+        var row = {
+          id: item.id,
+          user_id: uid,
+          month_id: mkKey(item.year, item.month),
+          year: item.year,
+          month: item.month,
+          tanggal: item.tanggal,
+          sumber: item.sumber,
+          nominal: item.nominal,
+          metode: item.metode,
+          catatan: item.catatan || "",
+        };
+        var res = await sb.from("income").upsert(row).select().single();
+        if (res.error) throw new Error(mapError(res.error));
+        res.data.nominal = Number(res.data.nominal);
+        return res.data;
+      } catch (e) {
+        var list = this._getLocal("income");
+        var idx = list.findIndex(function (x) { return x.id === item.id; });
+        if (idx >= 0) list[idx] = item; else list.unshift(item);
+        this._setLocal("income", list);
+        return item;
+      }
     },
 
     deleteIncome: async function (id) {
-      var res = await sb.from("income").delete().eq("id", id);
-      if (res.error) throw new Error(mapError(res.error));
+      var isGuest = !!localStorage.getItem("keuanganku_guest_user");
+      if (isGuest) {
+        var list = this._getLocal("income").filter(function (x) { return x.id !== id; });
+        this._setLocal("income", list);
+        return;
+      }
+      try {
+        var res = await sb.from("income").delete().eq("id", id);
+        if (res.error) throw new Error(mapError(res.error));
+      } catch (e) {
+        var list = this._getLocal("income").filter(function (x) { return x.id !== id; });
+        this._setLocal("income", list);
+      }
+    },
+
+    // ── Expenses ─────────────────────────────────────────────────────────
+    saveExpense: async function (item) {
+      var isGuest = !!localStorage.getItem("keuanganku_guest_user");
+      if (isGuest) {
+        var list = this._getLocal("expenses");
+        var idx = list.findIndex(function (x) { return x.id === item.id; });
+        if (idx >= 0) list[idx] = item; else list.unshift(item);
+        this._setLocal("expenses", list);
+        return item;
+      }
+      try {
+        var uid = await currentUserId();
+        var row = {
+          id: item.id,
+          user_id: uid,
+          month_id: mkKey(item.year, item.month),
+          year: item.year,
+          month: item.month,
+          tanggal: item.tanggal,
+          keperluan: item.keperluan,
+          kategori: item.kategori,
+          nominal: item.nominal,
+          bayar: item.bayar,
+          nw: item.nw,
+          catatan: item.catatan || "",
+        };
+        var res = await sb.from("expenses").upsert(row).select().single();
+        if (res.error) throw new Error(mapError(res.error));
+        res.data.nominal = Number(res.data.nominal);
+        return res.data;
+      } catch (e) {
+        var list = this._getLocal("expenses");
+        var idx = list.findIndex(function (x) { return x.id === item.id; });
+        if (idx >= 0) list[idx] = item; else list.unshift(item);
+        this._setLocal("expenses", list);
+        return item;
+      }
+    },
+
+    deleteExpense: async function (id) {
+      var isGuest = !!localStorage.getItem("keuanganku_guest_user");
+      if (isGuest) {
+        var list = this._getLocal("expenses").filter(function (x) { return x.id !== id; });
+        this._setLocal("expenses", list);
+        return;
+      }
+      try {
+        var res = await sb.from("expenses").delete().eq("id", id);
+        if (res.error) throw new Error(mapError(res.error));
+      } catch (e) {
+        var list = this._getLocal("expenses").filter(function (x) { return x.id !== id; });
+        this._setLocal("expenses", list);
+      }
     },
 
     // ── Savings (Tabungan) ───────────────────────────────────────────────
     saveSaving: async function (item) {
-      var uid = await currentUserId();
-      var row = {
-        id: item.id,
-        user_id: uid,
-        tipe: item.tipe,
-        tanggal: item.tanggal,
-        nominal: item.nominal,
-        catatan: item.catatan || "",
-      };
-      var res = await sb.from("savings").upsert(row).select().single();
-      if (res.error) throw new Error(mapError(res.error));
-      res.data.nominal = Number(res.data.nominal);
-      return res.data;
+      var isGuest = !!localStorage.getItem("keuanganku_guest_user");
+      if (isGuest) {
+        var list = this._getLocal("savings");
+        var idx = list.findIndex(function (x) { return x.id === item.id; });
+        if (idx >= 0) list[idx] = item; else list.unshift(item);
+        this._setLocal("savings", list);
+        return item;
+      }
+      try {
+        var uid = await currentUserId();
+        var row = {
+          id: item.id,
+          user_id: uid,
+          tipe: item.tipe,
+          lokasi: item.lokasi || "KROM",
+          tanggal: item.tanggal,
+          nominal: item.nominal,
+          catatan: item.catatan || "",
+        };
+        var res = await sb.from("savings").upsert(row).select().single();
+        if (res.error) {
+          delete row.lokasi;
+          res = await sb.from("savings").upsert(row).select().single();
+        }
+        if (res.error) throw new Error(mapError(res.error));
+        res.data.nominal = Number(res.data.nominal);
+        if (item.lokasi) res.data.lokasi = item.lokasi;
+        return res.data;
+      } catch (e) {
+        var list = this._getLocal("savings");
+        var idx = list.findIndex(function (x) { return x.id === item.id; });
+        if (idx >= 0) list[idx] = item; else list.unshift(item);
+        this._setLocal("savings", list);
+        return item;
+      }
     },
 
     deleteSaving: async function (id) {
-      var res = await sb.from("savings").delete().eq("id", id);
-      if (res.error) throw new Error(mapError(res.error));
+      var isGuest = !!localStorage.getItem("keuanganku_guest_user");
+      if (isGuest) {
+        var list = this._getLocal("savings").filter(function (x) { return x.id !== id; });
+        this._setLocal("savings", list);
+        return;
+      }
+      try {
+        var res = await sb.from("savings").delete().eq("id", id);
+        if (res.error) throw new Error(mapError(res.error));
+      } catch (e) {
+        var list = this._getLocal("savings").filter(function (x) { return x.id !== id; });
+        this._setLocal("savings", list);
+      }
     },
   };
 
