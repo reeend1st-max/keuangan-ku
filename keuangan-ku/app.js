@@ -36,6 +36,7 @@ var T = {
 // ── Categories configuration ──────────────────────────────────────────────────
 var CATS = {
   "Makan & Minum": { emoji: "🍔", color: T.amber },
+  "Belanja Bulanan": { emoji: "🛒", color: "#3B82F6" },
   "Skincare": { emoji: "✨", color: T.violet },
   "Fashion": { emoji: "👕", color: "#EC4899" },
   "Tagihan": { emoji: "📄", color: T.coral },
@@ -320,7 +321,22 @@ function AuthScreen(p) {
         React.createElement(DInput, { label: isUp ? "Username" : "Email atau Username", value: username, onChange: setUsername, placeholder: isUp ? "Pilih username kamu" : "Masukkan Email atau Username", autoFocus: !isUp }),
         React.createElement(DInput, { label: "Password", value: password, onChange: setPassword, type: "password", placeholder: "Minimal 6 karakter" }),
         err && React.createElement("div", { style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, padding: "10px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600 } }, "⚠️ ", err),
-        React.createElement("button", { type: "submit", disabled: loading, style: { marginTop: 6, background: "linear-gradient(135deg," + T.teal + ",#00b882)", color: "#0A0E17", border: "none", padding: 12, borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: loading ? "wait" : "pointer" } }, loading ? "Memproses..." : isUp ? "Buat Akun →" : "Masuk →")
+        React.createElement("button", { type: "submit", disabled: loading, style: { marginTop: 6, background: "linear-gradient(135deg," + T.teal + ",#00b882)", color: "#0A0E17", border: "none", padding: 12, borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: loading ? "wait" : "pointer" } }, loading ? "Memproses..." : isUp ? "Buat Akun →" : "Masuk →"),
+        React.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: function () {
+              setLoading(true);
+              window.Api.loginGuest().then(function (res) {
+                setLoading(false);
+                p.onAuth(res.user);
+              });
+            },
+            style: { background: "transparent", border: "1px solid " + T.border, color: T.textSub, padding: "10px", borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer", marginTop: 4 }
+          },
+          "🚀 Masuk Tanpa Akun (Mode Tamu / Offline)"
+        )
       )
     )
   );
@@ -518,6 +534,7 @@ function SavingForm(p) {
   if (!p.open) return null;
 
   var _t = useState(p.initial ? p.initial.tipe : (p.defaultTipe || "setoran")), tipe = _t[0], setTipe = _t[1];
+  var _lok = useState(p.initial ? (p.initial.lokasi || "KROM") : "KROM"), lokasi = _lok[0], setLokasi = _lok[1];
   var _n = useState(p.initial ? String(p.initial.nominal) : ""), nominal = _n[0], setNominal = _n[1];
   var _dt = useState(p.initial ? p.initial.tanggal : todayStr()), tanggal = _dt[0], setTanggal = _dt[1];
   var _c = useState(p.initial ? p.initial.catatan : ""), catatan = _c[0], setCatatan = _c[1];
@@ -526,6 +543,7 @@ function SavingForm(p) {
   useEffect(function () {
     if (p.open) {
       setTipe(p.initial ? p.initial.tipe : (p.defaultTipe || "setoran"));
+      setLokasi(p.initial ? (p.initial.lokasi || "KROM") : "KROM");
       setNominal(p.initial ? String(p.initial.nominal) : "");
       setTanggal(p.initial ? p.initial.tanggal : todayStr());
       setCatatan(p.initial ? p.initial.catatan : "");
@@ -541,6 +559,7 @@ function SavingForm(p) {
     p.onSave({
       id: p.initial ? p.initial.id : String(Date.now()),
       tipe: tipe,
+      lokasi: lokasi,
       nominal: num,
       tanggal: tanggal.trim(),
       catatan: catatan.trim(),
@@ -585,9 +604,14 @@ function SavingForm(p) {
     ),
     React.createElement(
       "div",
-      { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },
-      React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: setNominal, placeholder: "0", autoFocus: true }),
-      React.createElement(DInput, { label: "Tanggal", value: tanggal, onChange: setTanggal, placeholder: "DD/MM/YYYY" })
+      { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 } },
+      React.createElement(DSelect, { label: "Lokasi / Platform Tabungan", value: lokasi, onChange: setLokasi, options: ["KROM", "JAGO", "BIBIT", "BCA", "SEABANK", "Lainnya"] }),
+      React.createElement(DInput, { label: "Tanggal (DD/MM/YYYY)", value: tanggal, onChange: setTanggal, placeholder: "DD/MM/YYYY" })
+    ),
+    React.createElement(
+      "div",
+      { style: { marginBottom: 12 } },
+      React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: setNominal, placeholder: "0", autoFocus: true })
     ),
     React.createElement(DInput, { label: "Catatan / Keterangan", value: catatan, onChange: setCatatan, placeholder: "Contoh: Tabungan Nikah, Dana Darurat..." }),
     err && React.createElement("div", { style: { color: T.coral, fontSize: 12, marginTop: 10, fontWeight: 600 } }, "⚠️ ", err),
@@ -607,6 +631,13 @@ function TabunganView(p) {
   var tSetor = setoran.reduce(function (a, s) { return a + s.nominal; }, 0);
   var tTarik = penarikan.reduce(function (a, s) { return a + s.nominal; }, 0);
   var saldo = tSetor - tTarik;
+
+  var LOCS = ["KROM", "JAGO", "BIBIT", "BCA", "SEABANK"];
+  var locTotals = LOCS.map(function (loc) {
+    var lStor = p.savings.filter(function (s) { return (s.lokasi || "KROM") === loc && s.tipe === "setoran"; }).reduce(function (a, s) { return a + s.nominal; }, 0);
+    var lTarik = p.savings.filter(function (s) { return (s.lokasi || "KROM") === loc && s.tipe === "penarikan"; }).reduce(function (a, s) { return a + s.nominal; }, 0);
+    return { name: loc, total: lStor - lTarik };
+  });
 
   return React.createElement(
     "div",
@@ -633,6 +664,21 @@ function TabunganView(p) {
         React.createElement(Btn, { color: T.amber, onClick: function () { p.onAdd("penarikan"); } }, "🟡 - Tarik Tabungan")
       )
     ),
+
+    // Rincian Saldo Per Lokasi / Platform
+    React.createElement(
+      "div",
+      { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 20 } },
+      locTotals.map(function (item) {
+        return React.createElement(
+          "div",
+          { key: item.name, style: { background: T.card, border: "1px solid " + T.border, borderRadius: 12, padding: "12px 14px", textAlign: "center" } },
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 800 } }, "🏦 " + item.name),
+          React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: item.total >= 0 ? T.teal : T.coral, marginTop: 4 } }, fmt(item.total))
+        );
+      })
+    ),
+
     React.createElement(
       "div",
       { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, overflow: "hidden" } },
@@ -644,14 +690,20 @@ function TabunganView(p) {
         ? React.createElement("div", { style: { padding: 32, textAlign: "center", color: T.textSub } }, "Belum ada transaksi tabungan.")
         : [].concat(p.savings).sort(function (a, b) { return parseD(b.tanggal) - parseD(a.tanggal); }).map(function (item) {
             var isStor = item.tipe === "setoran";
+            var loc = item.lokasi || "KROM";
             return React.createElement(
               "div",
               { key: item.id, style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: "1px solid " + T.border } },
               React.createElement(
                 "div",
                 null,
-                React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: isStor ? T.sage : T.amber } }, isStor ? "💚 Setoran Tabungan" : "🟡 Penarikan Tabungan"),
-                React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, item.tanggal, item.catatan ? " · " + item.catatan : "")
+                React.createElement(
+                  "div",
+                  { style: { display: "flex", alignItems: "center", gap: 8 } },
+                  React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: isStor ? T.sage : T.amber } }, isStor ? "💚 Setoran Tabungan" : "🟡 Penarikan Tabungan"),
+                  React.createElement("span", { style: { fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 10, background: T.panel, border: "1px solid " + T.border, color: T.teal } }, "🏦 " + loc)
+                ),
+                React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 4 } }, item.tanggal, item.catatan ? " · " + item.catatan : "")
               ),
               React.createElement(
                 "div",
