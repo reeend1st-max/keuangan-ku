@@ -12,6 +12,10 @@ window.ENV = {
   SUPABASE_URL: "${supabaseUrl}",
   SUPABASE_ANON_KEY: "${supabaseKey}"
 };
+window.__SUPABASE_CONFIG__ = {
+  url: "${supabaseUrl}",
+  anonKey: "${supabaseKey}"
+};
 `;
 
 const rootDir = path.resolve(__dirname, "..");
